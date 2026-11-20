@@ -9,17 +9,17 @@ The panel uses Omarchy's theme, keyboard focus and popup positioning. It reads l
 | View | What it shows and does |
 | --- | --- |
 | **Agents** | Installed clients, their saved gateway route, an explicit **Apply** action and recovery of owned changes. Detection-only adapters remain read-only. |
-| **Limits** | Saved local quota readings. Missing or expired readings are shown as unavailable. Opening this view does not sign in or refresh account tokens. |
+| **Limits** | Saved quota readings and an explicit **Update** button for accounts that support quota queries. Missing or expired readings remain unavailable. Opening the view does not contact providers. |
 | **Usage** | Today, 7 days, 30 days or all history; provider filtering; token, request, cost and cache summaries; a native bar chart and provider rows. |
 | **Routing** | Existing route groups and their strategies. Choose a model or group and apply it to a particular agent. There is no invented global-default setting. |
 
-**Refresh local data** rereads the local snapshot. It does not ask providers for a new quota reading. Usage is calculated from the existing history file with bounded working memory. A partial scan is labelled; unknown price or cache data remains unknown rather than being displayed as zero. “Today” uses the local calendar day; 7 and 30 days include today.
+**Refresh local data** rereads the local snapshot. It does not ask providers for a new quota reading. Usage is calculated from the existing history file with bounded working memory. A partial scan is labelled. Costs use recorded amounts or saved model prices and show how many requests could be priced. A partial known amount is labelled as such; an estimate is not a provider bill. Unknown prices, cache splits and unsupported billing tiers remain unpriced. “Today” uses the local calendar day; 7 and 30 days include today.
 
 The top-right **Open** button focuses the optional desktop GUI if it is already running, or launches it with a bounded startup lock. When the GUI is absent, it opens the full controls. The **More** menu opens the existing terminal controls for service management, providers, accounts, library, privacy, plugins, logs and updates. Right-clicking the bar icon opens those full controls directly.
 
 ## Install the native panel
 
-Requirements are Omarchy **4.5**, Python **3.11+**, and zcalld **0.2+**. Python uses only its standard library. Omarchy supplies Quickshell, the UI components, the configured terminal and `gum`. The optional `zcalld-compat` package provides the backend's community, OAuth, privacy and advanced-routing capabilities.
+Requirements are Omarchy **4.5**, Python **3.11+**, and zcalld **0.2+**. Python uses only its standard library. Omarchy supplies Quickshell, the UI components, the configured terminal and `gum`. The optional `zcalld-compat` package provides the backend's community, OAuth, privacy and advanced-routing capabilities. Explicit quota updates require its quota capability (available from **0.1.6**); older helpers retain saved readings and show how to enable updates.
 
 Register the frontend through Omarchy's Git plugin manager:
 
@@ -58,6 +58,7 @@ For exact registration, preview, backup and removal steps, see [installation](do
 - **Ctrl+Tab / Ctrl+Shift+Tab** switch the four views. **Ctrl+R** refreshes local data. **Escape** dismisses the current menu or closes the panel.
 - In **Agents**, choose **Change**, select a route and press **Apply**. The saved agent configuration changes through zcalld's existing adapter. Reload or restart that agent when prompted; the panel does not restart it or the gateway.
 - **Revert** requires a second explicit confirmation and delegates to the backend's ownership checks. It does not force an overwrite of user edits.
+- In **Limits**, **Update** queries only the selected supported account. It never falls back to another account. A timeout preserves the saved reading and offers a clear retry action. Closing the panel lets the submitted update finish; it does not restart or repeat it.
 
 The usage and quota views are snapshots. They are not a live monitor, a billing statement or proof that every configured provider is currently reachable. Provider filtering includes identities present in historical usage or cached quotas, so its options are not a count of currently configured providers.
 
@@ -86,6 +87,8 @@ The panel's local JSON boundary is also available for inspection:
 zcall-omarchy panel snapshot --period 7d --provider all
 zcall-omarchy panel action agent.route --payload '{"agent":"codex","route":"daily"}'
 zcall-omarchy panel action agent.revert --payload '{"agent":"codex"}'
+# Use an opaque account ID returned by the local snapshot:
+zcall-omarchy panel action quota.refresh --payload '{"account":"ACCOUNT_ID"}'
 zcall-omarchy action status
 zcall-omarchy --config /path/to/config.conf action models
 ```

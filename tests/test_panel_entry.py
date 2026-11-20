@@ -37,6 +37,15 @@ class PanelEntry(unittest.TestCase):
             self.assertFalse(value['ok'])
             action.assert_called_once_with(client, 'agent.route', payload)
 
+    def test_quota_action_preserves_the_selected_opaque_account(self):
+        payload = {'account': 'fixture:opaque#slot'}
+        client = Mock()
+        with patch.object(cli, 'Client', return_value=client), patch.object(cli.backend, 'action', return_value={'ok': False, 'error_code': 'timeout'}) as action:
+            code, value = self.invoke(['panel', 'action', 'quota.refresh', '--payload', json.dumps(payload)])
+            self.assertEqual((code, value['error_code']), (0, 'timeout'))
+            action.assert_called_once_with(client, 'quota.refresh', payload)
+            client.call.assert_not_called()
+
     def test_invalid_and_oversized_payloads_do_not_reach_action(self):
         for payload in ('{bad', ' ' * 4097):
             with self.subTest(payload=payload[:10]), patch.object(cli, 'Client'), patch.object(cli.backend, 'action') as action, contextlib.redirect_stderr(io.StringIO()):

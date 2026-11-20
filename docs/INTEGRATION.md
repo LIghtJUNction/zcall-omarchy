@@ -43,7 +43,7 @@ Every child process is invoked with an argument list, not a constructed shell co
 
 Read-only screens use existing JSON commands. Provider edits, route edits, privacy settings and community plugin operations use their existing CLI commands. Agent configuration is changed only after the user selects the agent and route and confirms the concrete action. An unsupported/detect-only agent remains viewable without inventing a provider adapter.
 
-The panel runs finite, asynchronous local subprocesses when opened, refreshed or explicitly applied. Rapid filter changes coalesce to the newest choice; older output cannot replace it. Closing the panel does not cancel a submitted agent change or start another read. An already-running finite read can finish. The terminal controller exits when closed. Detailed error output belongs in that terminal; the bar does not retain raw credentials or request content.
+The panel runs finite, asynchronous local subprocesses when opened, refreshed or explicitly applied. Rapid filter changes coalesce to the newest choice; older output cannot replace it. Closing the panel does not cancel a submitted agent change or quota update, or start another read. An already-running finite read can finish. The terminal controller exits when closed. The bar gives a bounded, actionable error message; fuller diagnostics remain in the terminal. It does not retain raw credentials or request content.
 
 ## Sources
 
@@ -64,7 +64,11 @@ URLs are not forwarded to QML.
 
 The agent.route and agent.revert actions validate current capabilities before
 delegating to the existing controller. They do not restart an agent or gateway.
-No automatic retry follows a failed mutation.
+No automatic retry follows a failed mutation. The quota.refresh action takes one opaque account ID from the snapshot, checks its current capability and delegates to the compatibility helper. Legacy cache rows without an account binding are never guessed into an account. Disabled, unsupported and externally managed credentials remain explicit errors.
+
+The action Process belongs to the bar widget, outside the popup content Loader. Hiding the panel or changing tabs does not kill it. The backend's 75-second quota action budget covers the provider request and credential checkpoint drain; QML imposes no shorter timeout. A failed update retains the previous saved quota.
+
+Usage cost_usd represents complete coverage only. The panel may show known_cost_usd for a partially priced period, alongside priced_requests / requests and the recorded or saved-price basis. The saved model catalog supplies estimates; missing billing details stay unpriced.
 
 Every dynamic Text uses PlainText. Labels passed into shared shell controls are
 also neutralized before presentation. The panel keeps a bounded number of local

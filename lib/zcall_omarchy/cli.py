@@ -89,7 +89,7 @@ def main(root):
     p.add_argument("--period", choices=["today", "7d", "30d", "all"], default="today")
     p.add_argument("--provider", default="all")
     p = panels.add_parser("action")
-    p.add_argument("name", choices=["agent.route", "agent.revert"])
+    p.add_argument("name", choices=["agent.route", "agent.revert", "quota.refresh"])
     p.add_argument("--payload", required=True)
     p = sub.add_parser("action", help="Run one existing controller action and print its JSON result")
     p.add_argument("name", choices=sorted({*READ_ACTIONS, *["service." + x for x in SERVICE_ACTIONS]}))

@@ -1,7 +1,8 @@
 import QtQuick
 import Quickshell.Io
 
-// Finite local subprocesses only. No polling, shell strings, or provider calls.
+// Finite controller subprocesses only; snapshots stay local. Provider quota
+// access is an explicit action, never an automatic or polling operation.
 Item {
     id: root
     required property string entryPath
@@ -13,6 +14,7 @@ Item {
     property string errorText: ""
     property string noticeText: ""
     property bool actionSucceeded: false
+    property string actionName: ""
     readonly property bool busy: reading
     readonly property bool actionBusy: writing
     property bool reading: false
@@ -65,10 +67,11 @@ Item {
         if ((pending || outdated) && active) Qt.callLater(refresh)
     }
     function perform(name, payload) {
-        if (actionBusy || busy || (name !== "agent.route" && name !== "agent.revert")) return
+        if (actionBusy || busy || ["agent.route", "agent.revert", "quota.refresh"].indexOf(name) < 0) return
         noticeText = ""
         errorText = ""
         actionSucceeded = false
+        actionName = name
         writer.command = baseCommand().concat(["panel", "action", name, "--payload", JSON.stringify(payload)])
         writer.hasStarted = false
         writing = true
@@ -80,10 +83,13 @@ Item {
             if (code !== 0 || writeOutput.text.length > 65536) throw new Error("action")
             var result = JSON.parse(writeOutput.text)
             if (!result || result.ok !== true) {
-                noticeText = result && typeof result.error === "string" ? result.error.slice(0, 280) : "action_failed"
+                var reasons = ["unsupported","capability_unknown","plugin_unavailable","plugin_disabled","account_unavailable","account_disabled","external_owner","invalid_account","timeout","provider_error","account_or_plugin_changed","cache_limit"]
+                noticeText = actionName === "quota.refresh" && result && reasons.indexOf(result.error_code) >= 0
+                    ? "quota_error_" + result.error_code
+                    : result && typeof result.error === "string" ? result.error.slice(0, 280) : "action_failed"
             } else {
                 actionSucceeded = true
-                noticeText = result.agent_restart_required ? "agent_saved" : "action_saved"
+                noticeText = actionName === "quota.refresh" ? "quota_updated" : result.agent_restart_required ? "agent_saved" : "action_saved"
                 pending = true
             }
         } catch (_) { noticeText = "action_failed" }

@@ -128,153 +128,334 @@
       "cached_tokens": 664700,
       "requests": 42,
       "failures": 2,
-      "cost_usd": 4.12,
-      "cache_hit_ratio": 0.6036
+      "cost_usd": null,
+      "cache_hit_ratio": 0.6036,
+      "known_cost_usd": 4.12,
+      "unpriced_requests": 2,
+      "priced_requests": 40,
+      "recorded_requests": 11,
+      "estimated_requests": 29,
+      "cost_basis": "mixed",
+      "unpriced_reasons": {
+        "missing_cache_split": 2
+      }
     },
     "buckets": [
       {
         "label": "00:00",
         "tokens": 0,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "01:00",
         "tokens": 0,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "02:00",
         "tokens": 0,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "03:00",
         "tokens": 0,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "04:00",
         "tokens": 0,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "05:00",
         "tokens": 0,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "06:00",
         "tokens": 24000,
         "requests": 1,
-        "cost_usd": 0.08
+        "cost_usd": null,
+        "known_cost_usd": 0.08,
+        "unpriced_requests": 1,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {
+          "missing_cache_split": 1
+        }
       },
       {
         "label": "07:00",
         "tokens": 66000,
         "requests": 2,
-        "cost_usd": 0.21
+        "cost_usd": null,
+        "known_cost_usd": 0.21,
+        "unpriced_requests": 1,
+        "priced_requests": 1,
+        "recorded_requests": 0,
+        "estimated_requests": 1,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {
+          "missing_cache_split": 1
+        }
       },
       {
         "label": "08:00",
         "tokens": 110000,
         "requests": 4,
-        "cost_usd": 0.36
+        "cost_usd": 0.36,
+        "known_cost_usd": 0.36,
+        "unpriced_requests": 0,
+        "priced_requests": 4,
+        "recorded_requests": 0,
+        "estimated_requests": 4,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "09:00",
         "tokens": 180000,
         "requests": 6,
-        "cost_usd": 0.58
+        "cost_usd": 0.58,
+        "known_cost_usd": 0.58,
+        "unpriced_requests": 0,
+        "priced_requests": 6,
+        "recorded_requests": 0,
+        "estimated_requests": 6,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "10:00",
         "tokens": 225000,
         "requests": 8,
-        "cost_usd": 0.73
+        "cost_usd": 0.73,
+        "known_cost_usd": 0.73,
+        "unpriced_requests": 0,
+        "priced_requests": 8,
+        "recorded_requests": 0,
+        "estimated_requests": 8,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "11:00",
         "tokens": 132000,
         "requests": 4,
-        "cost_usd": 0.43
+        "cost_usd": 0.43,
+        "known_cost_usd": 0.43,
+        "unpriced_requests": 0,
+        "priced_requests": 4,
+        "recorded_requests": 0,
+        "estimated_requests": 4,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "12:00",
         "tokens": 56000,
         "requests": 2,
-        "cost_usd": 0.18
+        "cost_usd": 0.18,
+        "known_cost_usd": 0.18,
+        "unpriced_requests": 0,
+        "priced_requests": 2,
+        "recorded_requests": 0,
+        "estimated_requests": 2,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "13:00",
         "tokens": 123000,
         "requests": 4,
-        "cost_usd": 0.4
+        "cost_usd": 0.4,
+        "known_cost_usd": 0.4,
+        "unpriced_requests": 0,
+        "priced_requests": 4,
+        "recorded_requests": 0,
+        "estimated_requests": 4,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "14:00",
         "tokens": 91000,
         "requests": 3,
-        "cost_usd": 0.3
+        "cost_usd": 0.3,
+        "known_cost_usd": 0.3,
+        "unpriced_requests": 0,
+        "priced_requests": 3,
+        "recorded_requests": 0,
+        "estimated_requests": 3,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "15:00",
         "tokens": 74000,
         "requests": 2,
-        "cost_usd": 0.24
+        "cost_usd": 0.24,
+        "known_cost_usd": 0.24,
+        "unpriced_requests": 0,
+        "priced_requests": 2,
+        "recorded_requests": 0,
+        "estimated_requests": 2,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "16:00",
         "tokens": 65400,
         "requests": 2,
-        "cost_usd": 0.21
+        "cost_usd": 0.21,
+        "known_cost_usd": 0.21,
+        "unpriced_requests": 0,
+        "priced_requests": 2,
+        "recorded_requests": 0,
+        "estimated_requests": 2,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "17:00",
         "tokens": 42000,
         "requests": 1,
-        "cost_usd": 0.14
+        "cost_usd": 0.14,
+        "known_cost_usd": 0.14,
+        "unpriced_requests": 0,
+        "priced_requests": 1,
+        "recorded_requests": 0,
+        "estimated_requests": 1,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "18:00",
         "tokens": 28000,
         "requests": 1,
-        "cost_usd": 0.09
+        "cost_usd": 0.09,
+        "known_cost_usd": 0.09,
+        "unpriced_requests": 0,
+        "priced_requests": 1,
+        "recorded_requests": 0,
+        "estimated_requests": 1,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "19:00",
         "tokens": 22000,
         "requests": 1,
-        "cost_usd": 0.07
+        "cost_usd": 0.07,
+        "known_cost_usd": 0.07,
+        "unpriced_requests": 0,
+        "priced_requests": 1,
+        "recorded_requests": 0,
+        "estimated_requests": 1,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "label": "20:00",
         "tokens": 14000,
         "requests": 0,
-        "cost_usd": 0.05
+        "cost_usd": 0.05,
+        "known_cost_usd": 0.05,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "21:00",
         "tokens": 10000,
         "requests": 0,
-        "cost_usd": 0.03
+        "cost_usd": 0.03,
+        "known_cost_usd": 0.03,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "22:00",
         "tokens": 5400,
         "requests": 0,
-        "cost_usd": 0.02
+        "cost_usd": 0.02,
+        "known_cost_usd": 0.02,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       },
       {
         "label": "23:00",
         "tokens": 200,
         "requests": 0,
-        "cost_usd": 0.0
+        "cost_usd": 0,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 0,
+        "recorded_requests": 0,
+        "estimated_requests": 0,
+        "cost_basis": "none",
+        "unpriced_reasons": {}
       }
     ],
     "providers": [
@@ -285,7 +466,14 @@
         "requests": 27,
         "failures": 1,
         "cost_usd": 3.04,
-        "cache_hit_ratio": 0.66
+        "cache_hit_ratio": 0.66,
+        "known_cost_usd": 3.04,
+        "unpriced_requests": 0,
+        "priced_requests": 27,
+        "recorded_requests": 0,
+        "estimated_requests": 27,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {}
       },
       {
         "id": "local",
@@ -293,8 +481,15 @@
         "tokens": 260000,
         "requests": 11,
         "failures": 1,
-        "cost_usd": 0.0,
-        "cache_hit_ratio": null
+        "cost_usd": 0,
+        "cache_hit_ratio": null,
+        "known_cost_usd": 0,
+        "unpriced_requests": 0,
+        "priced_requests": 11,
+        "recorded_requests": 11,
+        "estimated_requests": 0,
+        "cost_basis": "recorded",
+        "unpriced_reasons": {}
       },
       {
         "id": "edge",
@@ -302,10 +497,26 @@
         "tokens": 139000,
         "requests": 4,
         "failures": 0,
-        "cost_usd": 1.08,
-        "cache_hit_ratio": 0.32
+        "cost_usd": null,
+        "cache_hit_ratio": 0.32,
+        "known_cost_usd": 1.08,
+        "unpriced_requests": 2,
+        "priced_requests": 2,
+        "recorded_requests": 0,
+        "estimated_requests": 2,
+        "cost_basis": "saved_prices",
+        "unpriced_reasons": {
+          "missing_cache_split": 2
+        }
       }
-    ]
+    ],
+    "pricing": {
+      "source": "saved_model_catalog",
+      "updated_at": "2026-11-20T00:00:00Z",
+      "estimate": true,
+      "priced_models": 3,
+      "message": "Synthetic saved prices"
+    }
   },
   "quota": {
     "state": "cached",
@@ -313,17 +524,27 @@
     "rows": [
       {
         "id": "north",
-        "label": "North API \u00b7 daily",
+        "label": "North API · daily",
         "remaining_percent": 72,
-        "reset_label": "Saved reading \u00b7 resets tomorrow",
+        "reset_label": "Saved reading · resets tomorrow",
+        "detail": "Fixture",
+        "account": "fixture:alpha"
+      },
+      {
+        "id": "north-weekly",
+        "account": "fixture:alpha",
+        "label": "North API · weekly",
+        "remaining_percent": 55,
+        "reset_label": "Saved reading · resets in 4 days",
         "detail": "Fixture"
       },
       {
         "id": "edge",
-        "label": "Edge inference \u00b7 monthly",
+        "label": "Edge inference · monthly",
         "remaining_percent": 44,
-        "reset_label": "Saved reading \u00b7 resets in 12 days",
-        "detail": "Fixture"
+        "reset_label": "Saved reading · resets in 12 days",
+        "detail": "Fixture",
+        "account": "fixture:beta"
       },
       {
         "id": "local",
@@ -331,6 +552,33 @@
         "remaining_percent": null,
         "reset_label": "No saved allowance",
         "detail": "Fixture"
+      }
+    ],
+    "refresh_available": true,
+    "accounts": [
+      {
+        "id": "fixture:alpha",
+        "provider": "north",
+        "label": "North API",
+        "can_refresh": true,
+        "reason": "",
+        "cached_at": "2026-11-20T08:00:00Z"
+      },
+      {
+        "id": "fixture:beta",
+        "provider": "edge",
+        "label": "Edge inference",
+        "can_refresh": false,
+        "reason": "unsupported",
+        "cached_at": "2026-11-20T08:00:00Z"
+      },
+      {
+        "id": "fixture:gamma",
+        "provider": "north",
+        "label": "North API · second account",
+        "can_refresh": true,
+        "reason": "",
+        "cached_at": null
       }
     ]
   },

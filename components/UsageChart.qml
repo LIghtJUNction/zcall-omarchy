@@ -7,11 +7,22 @@ Item {
     property var buckets: []
     property string metric: "tokens"
     property string emptyText: ""
+    property string partialLabel: ""
+    property string unknownText: ""
+    readonly property bool hasValues: buckets.some(function(row) { return amount(row) !== null })
+    function amount(row) {
+        var value = row[metric]
+        if (metric === "cost_usd" && (value === null || value === undefined))
+            return row.priced_requests > 0 && typeof row.known_cost_usd === "number" ? row.known_cost_usd : null
+        return typeof value === "number" && isFinite(value) ? value : null
+    }
+    onBucketsChanged: hoveredLabel = ""
+    onMetricChanged: hoveredLabel = ""
     property string hoveredLabel: ""
     readonly property real maximum: {
         var highest = 0
         for (var i = 0; i < buckets.length; ++i) {
-            var n = buckets[i][metric]
+            var n = amount(buckets[i])
             if (typeof n === "number" && isFinite(n)) highest = Math.max(highest, n)
         }
         return highest
@@ -35,7 +46,7 @@ Item {
         var unit = suffix === "B" ? 1000000000 : suffix === "M" ? 1000000 : suffix === "k" ? 1000 : 1
         return Commons.I18n.formatNumber(n / unit, suffix ? 1 : 0) + suffix
     }
-    Label { width: parent.width; text: root.hoveredLabel || root.compact(root.maximum); font.pixelSize: Style.font.caption; opacity: 0.65 }
+    Label { width: parent.width; text: root.hoveredLabel || root.compact(root.hasValues ? root.maximum : null); font.pixelSize: Style.font.caption; opacity: 0.65 }
     Item {
         id: plot
         anchors { left: parent.left; right: parent.right; top: parent.top; bottom: parent.bottom; topMargin: Style.space(25); bottomMargin: Style.space(23) }
@@ -59,7 +70,7 @@ Item {
                     required property int index
                     width: Math.max(1, (plot.width - (root.buckets.length - 1) * parent.spacing) / Math.max(1, root.buckets.length))
                     height: plot.height
-                    readonly property real amount: typeof modelData[root.metric] === "number" ? modelData[root.metric] : 0
+                    readonly property real amount: root.amount(modelData) || 0
                     Rectangle {
                         anchors.bottom: parent.bottom
                         width: parent.width
@@ -72,13 +83,13 @@ Item {
                         id: hover
                         anchors.fill: parent
                         hoverEnabled: true
-                        onEntered: root.hoveredLabel = String(slot.modelData.label).slice(0, 60) + " · " + root.compact(slot.modelData[root.metric])
+                        onEntered: root.hoveredLabel = String(slot.modelData.label).slice(0, 60) + " · " + root.compact(root.amount(slot.modelData)) + (root.metric === "cost_usd" && slot.modelData.unpriced_requests > 0 ? " · " + root.partialLabel : "")
                         onExited: root.hoveredLabel = ""
                     }
                 }
             }
         }
-        Label { anchors.centerIn: parent; visible: root.maximum <= 0; text: root.emptyText; font.pixelSize: Style.font.caption; opacity: 0.65 }
+        Label { anchors.centerIn: parent; visible: root.maximum <= 0; text: root.hasValues ? root.emptyText : root.unknownText; font.pixelSize: Style.font.caption; opacity: 0.65 }
     }
     Repeater {
         model: root.tickIndexes

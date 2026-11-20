@@ -74,6 +74,7 @@ ShellRoot {
         property string provider: "all"
         property bool busy: false
         property bool actionBusy: false
+        property string actionName: ""
         property string errorText: ""
         property string noticeText: ""
         property bool actionSucceeded: false

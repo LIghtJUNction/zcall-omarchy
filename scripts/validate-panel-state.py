@@ -31,7 +31,7 @@ if args[:2]==['panel','snapshot']:
  print(json.dumps(value))
 elif args[:2]==['panel','action']:
  time.sleep(.06)
- print(json.dumps({'ok':True,'agent_restart_required':True}))
+ print(json.dumps({'ok':True,'agent_restart_required':False}))
 else: sys.exit(2)
 ''')
     entry.chmod(0o700)
@@ -71,11 +71,11 @@ ShellRoot {
                 root.stage = 2
             } else if (root.stage === 2 && !root.source.busy && root.source.refreshSerial === 1) {
                 if (root.source.snapshot.filters.period !== "30d") { root.fail("Stale filter response replaced the latest choice"); return }
-                root.source.perform("agent.route", {agent:"codex",route:"daily"})
+                root.source.perform("quota.refresh", {account:"fixture:opaque"})
                 root.source.active = false
                 root.stage = 3
             } else if (root.stage === 3 && !root.source.actionBusy) {
-                if (!root.source.actionSucceeded || root.source.noticeText !== "agent_saved") { root.fail("Closing discarded the explicit action result"); return }
+                if (!root.source.actionSucceeded || root.source.noticeText !== "quota_updated") { root.fail("Closing discarded the explicit action result"); return }
                 root.changed = root.ticks
                 root.stage = 4
             } else if (root.stage === 4 && root.ticks - root.changed > 10) {
@@ -109,7 +109,7 @@ ShellRoot {
     calls = [json.loads(line) for line in (temporary / 'calls.jsonl').read_text().splitlines()]
     expected = [['panel', 'snapshot', '--period', 'today', '--provider', 'all'],
                 ['panel', 'snapshot', '--period', '30d', '--provider', 'all'],
-                ['panel', 'action', 'agent.route', '--payload', '{"agent":"codex","route":"daily"}']]
+                ['panel', 'action', 'quota.refresh', '--payload', '{"account":"fixture:opaque"}']]
     if calls != expected:
         raise SystemExit('Unexpected controller call sequence: ' + repr(calls))
     print('Real QML lifecycle passed: lazy open, latest-filter wins, explicit action once, close without polling, missing-controller error.')

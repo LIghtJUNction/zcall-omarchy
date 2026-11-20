@@ -53,8 +53,43 @@ FocusScope {
         var suffix = unit === 1000000000 ? "B" : unit === 1000000 ? "M" : unit === 1000 ? "k" : ""
         return number(value / unit, suffix ? 1 : 0) + suffix
     }
-    function money(value) { return typeof value === "number" && isFinite(value) ? "$" + number(value, 2) : "—" }
+    function money(value) { return typeof value === "number" && isFinite(value) ? "$" + number(value, value < 10 ? 3 : 2) : "—" }
     function percent(value) { return typeof value === "number" && isFinite(value) ? number(value * 100, 1) + "%" : "—" }
+    function costValue(row) {
+        if (typeof row.cost_usd === "number" && isFinite(row.cost_usd)) return row.cost_usd
+        return row.priced_requests > 0 && typeof row.known_cost_usd === "number" && isFinite(row.known_cost_usd) ? row.known_cost_usd : null
+    }
+    function costDetail(row) {
+        if (costValue(row) === null) return t("not_priced")
+        var basis = row.cost_basis === "saved_prices" || row.cost_basis === "mixed" ? t("estimated") : t("recorded")
+        return typeof row.priced_requests === "number" && typeof row.requests === "number"
+            ? t("cost_coverage_short").arg(basis).arg(number(row.priced_requests)).arg(number(row.requests))
+            : basis + " · USD"
+    }
+    function costNote(row) {
+        if (costValue(row) === null) return t("cost_unknown_note")
+        var detail = typeof row.priced_requests === "number" && typeof row.requests === "number"
+            ? t("cost_coverage").arg(number(row.priced_requests)).arg(number(row.requests)) : ""
+        return (row.cost_basis === "saved_prices" || row.cost_basis === "mixed" ? t("cost_estimate_note") : t("cost_recorded_note")) + (detail ? " " + detail : "")
+    }
+    function quotaAccount(id) {
+        return (quota.accounts || []).find(function(row) { return row.id === id }) || null
+    }
+    function quotaButton(row, index) {
+        if (!row.account) return null
+        for (var i = 0; i < index; i++) if (quota.rows[i].account === row.account) return null
+        return quotaAccount(row.account)
+    }
+    function quotaMissingAccounts() {
+        return (quota.accounts || []).filter(function(account) {
+            return (root.dataSource.provider === "all" || account.provider === root.dataSource.provider)
+                && !(root.quota.rows || []).some(function(row) { return row.account === account.id })
+        })
+    }
+    function quotaReason(code) {
+        var known = ["unsupported","capability_unknown","plugin_unavailable","plugin_disabled","account_unavailable","account_disabled","external_owner","invalid_account","timeout","provider_error","account_or_plugin_changed","cache_limit"]
+        return known.indexOf(code) >= 0 ? t("quota_error_" + code) : t("quota_unavailable_help")
+    }
     function providerOptions() {
         return [{value:"all", label:t("all_providers")}].concat((snapshot ? snapshot.providers : []).map(function(row) { return {value:row.id, label:safe(row.label)} }))
     }
@@ -69,7 +104,9 @@ FocusScope {
         routeId = row.route || ""
         confirmRevert = false
     }
-    function notice(value) { return ["agent_saved","action_saved","action_failed"].indexOf(value) >= 0 ? t(value) : value }
+    function notice(value) {
+        return ["agent_saved","action_saved","action_failed","quota_updated"].indexOf(value) >= 0 || value.indexOf("quota_error_") === 0 ? t(value) : value
+    }
     function changeTab(index) { tab = index; moreOpen = false; confirmRevert = false }
 
     Keys.onPressed: function(event) {
@@ -200,7 +237,7 @@ FocusScope {
                                     C.Label { Layout.fillWidth: true; text: agentRow.modelData.name; font.weight: Font.DemiBold }
                                     C.Label { Layout.fillWidth: true; text: agentRow.modelData.route || (agentRow.modelData.configured ? root.t("configured") : root.t("not_configured")); font.pixelSize: Style.font.caption; opacity: 0.6 }
                                 }
-                                C.PanelButton { visible: agentRow.modelData.editable; label: root.t("change"); enabled: !root.editing; onClicked: root.chooseAgent(agentRow.modelData) }
+                                C.PanelButton { objectName: "agent-choice-" + agentRow.modelData.id; visible: agentRow.modelData.editable; label: root.t("change"); enabled: !root.editing; onClicked: root.chooseAgent(agentRow.modelData) }
                                 C.Label { visible: !agentRow.modelData.editable; text: root.t("detect_only"); font.pixelSize: Style.space(10); opacity: 0.55 }
                             }
                         }
@@ -220,7 +257,7 @@ FocusScope {
                     id: quotaColumn
                     width: parent.width - Style.space(8)
                     spacing: Style.space(14)
-                    Ui.Dropdown { width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
+                    Ui.Dropdown { objectName: "quota-provider-select"; width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
                     C.Label { width: parent.width; text: root.t("quota_local"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
                     Column {
                         visible: !(root.quota.rows || []).length
@@ -235,6 +272,8 @@ FocusScope {
                         Column {
                             id: quotaRow
                             required property var modelData
+                            required property int index
+                            readonly property var account: root.quotaButton(modelData, index)
                             width: quotaColumn.width
                             spacing: Style.space(7)
                             RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: quotaRow.modelData.label; font.weight: Font.Medium } C.Label { text: typeof quotaRow.modelData.remaining_percent === "number" ? root.number(quotaRow.modelData.remaining_percent, 0) + "%" : "—" } }
@@ -242,9 +281,46 @@ FocusScope {
                                 width: parent.width; height: Style.space(4); radius: 2; color: Qt.alpha(Commons.Color.popups.text, 0.08)
                                 Rectangle { height: parent.height; radius: parent.radius; width: typeof quotaRow.modelData.remaining_percent === "number" ? parent.width * Math.max(0, Math.min(100, quotaRow.modelData.remaining_percent)) / 100 : 0; color: Commons.Color.accent; opacity: 0.75 }
                             }
-                            C.Label { width: parent.width; text: quotaRow.modelData.reset_label || quotaRow.modelData.detail || root.t("unknown"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
+                            RowLayout {
+                                width: parent.width
+                                C.Label { Layout.fillWidth: true; Layout.minimumWidth: 0; text: quotaRow.modelData.reset_label || quotaRow.modelData.detail || root.t("unknown"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
+                                C.PanelButton {
+                                    objectName: "quota-refresh-" + (quotaRow.account ? quotaRow.account.id : "")
+                                    visible: !!quotaRow.account && quotaRow.account.can_refresh
+                                    label: root.dataSource.actionBusy && root.dataSource.actionName === "quota.refresh" ? root.t("quota_updating") : root.t("quota_update")
+                                    fontSize: Style.font.caption
+                                    enabled: !root.editing
+                                    tooltipText: root.t("quota_update_hint")
+                                    onClicked: root.dataSource.perform("quota.refresh", {account:quotaRow.account.id})
+                                }
+                            }
+                            C.Label { width: parent.width; visible: !!quotaRow.account && !quotaRow.account.can_refresh; text: quotaRow.account ? root.quotaReason(quotaRow.account.reason) : ""; font.pixelSize: Style.space(10); wrapMode: Text.WordWrap; opacity: 0.55 }
                         }
                     }
+                    Repeater {
+                        model: root.quotaMissingAccounts()
+                        Column {
+                            id: quotaAccountRow
+                            required property var modelData
+                            width: quotaColumn.width
+                            spacing: Style.space(5)
+                            RowLayout {
+                                width: parent.width
+                                C.Label { Layout.fillWidth: true; Layout.minimumWidth: 0; text: quotaAccountRow.modelData.label; font.weight: Font.Medium }
+                                C.PanelButton {
+                                    objectName: "quota-refresh-" + quotaAccountRow.modelData.id
+                                    visible: quotaAccountRow.modelData.can_refresh
+                                    label: root.dataSource.actionBusy && root.dataSource.actionName === "quota.refresh" ? root.t("quota_updating") : root.t("quota_update")
+                                    enabled: !root.editing
+                                    fontSize: Style.font.caption
+                                    tooltipText: root.t("quota_update_hint")
+                                    onClicked: root.dataSource.perform("quota.refresh", {account:quotaAccountRow.modelData.id})
+                                }
+                            }
+                            C.Label { width: parent.width; text: quotaAccountRow.modelData.can_refresh ? root.t("quota_not_cached") : root.quotaReason(quotaAccountRow.modelData.reason); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
+                        }
+                    }
+                    C.Label { width: parent.width; visible: root.quota.refresh_available === false; text: root.t("quota_helper_update"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
                 }
             }
 
@@ -268,7 +344,7 @@ FocusScope {
                             C.PanelButton { required property string modelData; Layout.fillWidth: true; label: root.t(modelData); selected: root.dataSource.period === modelData; fontSize: Style.font.caption; onClicked: root.dataSource.filter(modelData, root.dataSource.provider) }
                         }
                     }
-                    Ui.Dropdown { width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
+                    Ui.Dropdown { objectName: "usage-provider-select"; width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
                     C.Label { width: parent.width; visible: root.usage.state === "partial" || root.usage.state === "unavailable"; text: root.usage.state === "partial" ? root.t("usage_partial") : root.t("usage_unavailable"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
                     GridLayout {
                         width: parent.width
@@ -277,9 +353,10 @@ FocusScope {
                         rowSpacing: Style.space(8)
                         C.MetricCard { Layout.fillWidth: true; Layout.preferredWidth: 1; title: root.t("tokens"); value: root.compact(root.totals.tokens); detail: root.compact(root.totals.input_tokens) + " ↑  " + root.compact(root.totals.output_tokens) + " ↓" }
                         C.MetricCard { Layout.fillWidth: true; Layout.preferredWidth: 1; title: root.t("requests"); value: root.number(root.totals.requests); detail: root.t("failed_count").arg(root.number(root.totals.failures)) }
-                        C.MetricCard { Layout.fillWidth: true; Layout.preferredWidth: 1; title: root.t("cost"); value: root.money(root.totals.cost_usd); detail: root.totals.cost_usd === null ? root.t("not_recorded") : root.t("recorded_usd") }
+                        C.MetricCard { Layout.fillWidth: true; Layout.preferredWidth: 1; title: root.t("cost"); value: root.money(root.costValue(root.totals)); detail: root.costDetail(root.totals) }
                         C.MetricCard { Layout.fillWidth: true; Layout.preferredWidth: 1; title: root.t("cache"); value: root.percent(root.totals.cache_hit_ratio); detail: root.compact(root.totals.cached_tokens) + " " + root.t("tokens_lower") }
                     }
+                    C.Label { width: parent.width; text: root.costNote(root.totals); font.pixelSize: Style.space(10); wrapMode: Text.WordWrap; opacity: 0.58 }
                     RowLayout {
                         width: parent.width
                         C.Label { Layout.fillWidth: true; text: root.t("activity"); font.weight: Font.DemiBold }
@@ -288,7 +365,7 @@ FocusScope {
                             C.PanelButton { required property string modelData; label: root.t(modelData === "cost_usd" ? "cost" : modelData); selected: root.chartMetric === modelData; fontSize: Style.space(10); horizontalPadding: Style.space(7); verticalPadding: Style.space(4); onClicked: root.chartMetric = modelData }
                         }
                     }
-                    C.UsageChart { width: parent.width; buckets: root.usage.buckets || []; metric: root.chartMetric; emptyText: root.chartMetric === "cost_usd" && root.totals.cost_usd === null ? root.t("not_recorded") : root.t("no_activity") }
+                    C.UsageChart { width: parent.width; buckets: root.usage.buckets || []; metric: root.chartMetric; emptyText: root.chartMetric === "cost_usd" && root.costValue(root.totals) === null ? root.t("not_priced") : root.t("no_activity"); partialLabel: root.t("partial"); unknownText: root.chartMetric === "cost_usd" ? root.t("not_priced") : root.t("unknown") }
                     C.Label { width: parent.width; text: root.t("by_provider"); font.weight: Font.DemiBold }
                     C.Label { width: parent.width; visible: !(root.usage.providers || []).length; text: root.t("no_usage"); opacity: 0.6; font.pixelSize: Style.font.caption }
                     Repeater {
@@ -298,12 +375,13 @@ FocusScope {
                             required property var modelData
                             width: usageColumn.width
                             spacing: Style.space(6)
-                            RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: providerRow.modelData.label; font.weight: Font.Medium } C.Label { text: root.compact(providerRow.modelData.tokens) + "  ·  " + root.money(providerRow.modelData.cost_usd); font.pixelSize: Style.font.caption } }
+                            RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: providerRow.modelData.label; font.weight: Font.Medium } C.Label { text: root.compact(providerRow.modelData.tokens) + "  ·  " + root.money(root.costValue(providerRow.modelData)); font.pixelSize: Style.font.caption } }
                             Rectangle {
                                 width: parent.width; height: Style.space(3); radius: 1; color: Qt.alpha(Commons.Color.popups.text, 0.06)
                                 Rectangle { width: root.totals.tokens > 0 ? parent.width * Math.min(1, providerRow.modelData.tokens / root.totals.tokens) : 0; height: parent.height; radius: 1; color: Commons.Color.accent; opacity: 0.55 }
                             }
                             C.Label { width: parent.width; text: root.t("provider_detail").arg(root.number(providerRow.modelData.requests)).arg(root.number(providerRow.modelData.failures)).arg(root.percent(providerRow.modelData.cache_hit_ratio)); font.pixelSize: Style.space(10); opacity: 0.55 }
+                            C.Label { width: parent.width; text: root.costDetail(providerRow.modelData); font.pixelSize: Style.space(10); opacity: 0.55 }
                         }
                     }
                 }
@@ -369,14 +447,12 @@ FocusScope {
                 label: root.t("agent")
                 value: root.agentId
                 options: root.agentOptions()
-                activeFocusOnTab: true
-                onChanged: function(value) { var selected = root.agents.find(function(row) { return row.id === value }); if (selected) root.chooseAgent(selected) }
+                    onChanged: function(value) { var selected = root.agents.find(function(row) { return row.id === value }); if (selected) root.chooseAgent(selected) }
             }
             Ui.SearchableDropdown {
                 objectName: "agent-route-select"
                 Layout.minimumWidth: 0
                 visible: root.tab === 3 || !!root.selectedAgent
-                activeFocusOnTab: true
                 Layout.fillWidth: true
                 label: root.t("route")
                 value: root.routeId
@@ -390,8 +466,8 @@ FocusScope {
                 visible: root.tab === 3 || !!root.selectedAgent
                 Layout.fillWidth: true
                 C.Label { Layout.fillWidth: true; text: root.confirmRevert ? root.t("confirm_revert") : root.t("apply_note"); wrapMode: Text.WordWrap; maximumLineCount: 2; font.pixelSize: Style.space(10); opacity: 0.62 }
-                C.PanelButton { visible: !!root.selectedAgent && root.selectedAgent.revertible; label: root.confirmRevert ? root.t("confirm") : root.t("revert"); enabled: !root.editing; onClicked: { if (root.confirmRevert) { root.dataSource.perform("agent.revert", {agent:root.agentId}); root.confirmRevert = false } else root.confirmRevert = true } }
-                C.PanelButton { label: root.dataSource.actionBusy ? root.t("saving") : root.t("apply"); selected: true; enabled: !root.editing && !!root.selectedAgent && root.selectedAgent.editable && root.routeId !== "" && root.routes.some(function(row) { return row.id === root.routeId }); onClicked: { root.confirmRevert = false; root.dataSource.perform("agent.route", {agent:root.agentId,route:root.routeId}) } }
+                C.PanelButton { objectName: "agent-revert"; visible: !!root.selectedAgent && root.selectedAgent.revertible; label: root.confirmRevert ? root.t("confirm") : root.t("revert"); enabled: !root.editing; onClicked: { if (root.confirmRevert) { root.dataSource.perform("agent.revert", {agent:root.agentId}); root.confirmRevert = false } else root.confirmRevert = true } }
+                C.PanelButton { objectName: "agent-apply"; label: root.dataSource.actionBusy ? root.t("saving") : root.t("apply"); selected: true; enabled: !root.editing && !!root.selectedAgent && root.selectedAgent.editable && root.routeId !== "" && root.routes.some(function(row) { return row.id === root.routeId }); onClicked: { root.confirmRevert = false; root.dataSource.perform("agent.route", {agent:root.agentId,route:root.routeId}) } }
             }
         }
 
