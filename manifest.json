@@ -4,7 +4,7 @@
   "name": "Zcall",
   "version": "0.1.2",
   "author": "LIghtJUNction",
-  "description": "Manage the zcalld local AI gateway from Omarchy",
+  "description": "Native local AI gateway panel for Omarchy",
   "kinds": [
     "bar-widget"
   ],
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "Zcall",
-    "description": "Local AI gateway menu; no background polling",
+    "description": "Agents, limits, usage and routing; refresh on demand",
     "category": "Development",
     "allowMultiple": false,
     "defaultSection": "right"

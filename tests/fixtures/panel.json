@@ -1,0 +1,338 @@
+{
+  "schema_version": 1,
+  "status": {
+    "healthy": true,
+    "service": "active",
+    "version": "0.2.4",
+    "privacy_enabled": true,
+    "privacy_runtime_state": "ready"
+  },
+  "providers": [
+    {
+      "id": "north",
+      "label": "North API"
+    },
+    {
+      "id": "local",
+      "label": "Local models"
+    },
+    {
+      "id": "edge",
+      "label": "Edge inference"
+    }
+  ],
+  "agents": [
+    {
+      "id": "codex",
+      "name": "Codex",
+      "installed": true,
+      "configured": true,
+      "editable": true,
+      "route": "daily",
+      "detail": "Fixture",
+      "revertible": true
+    },
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "installed": true,
+      "configured": true,
+      "editable": true,
+      "route": "writing",
+      "detail": "Fixture",
+      "revertible": false
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "installed": true,
+      "configured": true,
+      "editable": true,
+      "route": "daily",
+      "detail": "Fixture",
+      "revertible": true
+    },
+    {
+      "id": "zed",
+      "name": "Zed",
+      "installed": true,
+      "configured": false,
+      "editable": true,
+      "route": null,
+      "detail": "Fixture",
+      "revertible": false
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "installed": true,
+      "configured": false,
+      "editable": false,
+      "route": null,
+      "detail": "Fixture",
+      "revertible": false
+    }
+  ],
+  "routes": [
+    {
+      "id": "daily",
+      "label": "Daily coding",
+      "kind": "group",
+      "provider": null
+    },
+    {
+      "id": "writing",
+      "label": "Writing",
+      "kind": "group",
+      "provider": null
+    },
+    {
+      "id": "local/fast",
+      "label": "Local / fast",
+      "kind": "direct",
+      "provider": "local"
+    },
+    {
+      "id": "north/reasoning",
+      "label": "North / reasoning",
+      "kind": "direct",
+      "provider": "north"
+    }
+  ],
+  "routing": {
+    "default_route": null,
+    "can_set_default": false,
+    "groups": [
+      {
+        "id": "daily",
+        "label": "Daily coding",
+        "strategy": "round-robin",
+        "members_count": 3
+      },
+      {
+        "id": "writing",
+        "label": "Writing",
+        "strategy": "priority",
+        "members_count": 2
+      }
+    ]
+  },
+  "usage": {
+    "state": "ready",
+    "period": "today",
+    "provider": "all",
+    "totals": {
+      "tokens": 1268400,
+      "input_tokens": 1101200,
+      "output_tokens": 167200,
+      "cached_tokens": 664700,
+      "requests": 42,
+      "failures": 2,
+      "cost_usd": 4.12,
+      "cache_hit_ratio": 0.6036
+    },
+    "buckets": [
+      {
+        "label": "00:00",
+        "tokens": 0,
+        "requests": 0,
+        "cost_usd": 0.0
+      },
+      {
+        "label": "01:00",
+        "tokens": 0,
+        "requests": 0,
+        "cost_usd": 0.0
+      },
+      {
+        "label": "02:00",
+        "tokens": 0,
+        "requests": 0,
+        "cost_usd": 0.0
+      },
+      {
+        "label": "03:00",
+        "tokens": 0,
+        "requests": 0,
+        "cost_usd": 0.0
+      },
+      {
+        "label": "04:00",
+        "tokens": 0,
+        "requests": 0,
+        "cost_usd": 0.0
+      },
+      {
+        "label": "05:00",
+        "tokens": 0,
+        "requests": 0,
+        "cost_usd": 0.0
+      },
+      {
+        "label": "06:00",
+        "tokens": 24000,
+        "requests": 1,
+        "cost_usd": 0.08
+      },
+      {
+        "label": "07:00",
+        "tokens": 66000,
+        "requests": 2,
+        "cost_usd": 0.21
+      },
+      {
+        "label": "08:00",
+        "tokens": 110000,
+        "requests": 4,
+        "cost_usd": 0.36
+      },
+      {
+        "label": "09:00",
+        "tokens": 180000,
+        "requests": 6,
+        "cost_usd": 0.58
+      },
+      {
+        "label": "10:00",
+        "tokens": 225000,
+        "requests": 8,
+        "cost_usd": 0.73
+      },
+      {
+        "label": "11:00",
+        "tokens": 132000,
+        "requests": 4,
+        "cost_usd": 0.43
+      },
+      {
+        "label": "12:00",
+        "tokens": 56000,
+        "requests": 2,
+        "cost_usd": 0.18
+      },
+      {
+        "label": "13:00",
+        "tokens": 123000,
+        "requests": 4,
+        "cost_usd": 0.4
+      },
+      {
+        "label": "14:00",
+        "tokens": 91000,
+        "requests": 3,
+        "cost_usd": 0.3
+      },
+      {
+        "label": "15:00",
+        "tokens": 74000,
+        "requests": 2,
+        "cost_usd": 0.24
+      },
+      {
+        "label": "16:00",
+        "tokens": 65400,
+        "requests": 2,
+        "cost_usd": 0.21
+      },
+      {
+        "label": "17:00",
+        "tokens": 42000,
+        "requests": 1,
+        "cost_usd": 0.14
+      },
+      {
+        "label": "18:00",
+        "tokens": 28000,
+        "requests": 1,
+        "cost_usd": 0.09
+      },
+      {
+        "label": "19:00",
+        "tokens": 22000,
+        "requests": 1,
+        "cost_usd": 0.07
+      },
+      {
+        "label": "20:00",
+        "tokens": 14000,
+        "requests": 0,
+        "cost_usd": 0.05
+      },
+      {
+        "label": "21:00",
+        "tokens": 10000,
+        "requests": 0,
+        "cost_usd": 0.03
+      },
+      {
+        "label": "22:00",
+        "tokens": 5400,
+        "requests": 0,
+        "cost_usd": 0.02
+      },
+      {
+        "label": "23:00",
+        "tokens": 200,
+        "requests": 0,
+        "cost_usd": 0.0
+      }
+    ],
+    "providers": [
+      {
+        "id": "north",
+        "label": "North API",
+        "tokens": 869400,
+        "requests": 27,
+        "failures": 1,
+        "cost_usd": 3.04,
+        "cache_hit_ratio": 0.66
+      },
+      {
+        "id": "local",
+        "label": "Local models",
+        "tokens": 260000,
+        "requests": 11,
+        "failures": 1,
+        "cost_usd": 0.0,
+        "cache_hit_ratio": null
+      },
+      {
+        "id": "edge",
+        "label": "Edge inference",
+        "tokens": 139000,
+        "requests": 4,
+        "failures": 0,
+        "cost_usd": 1.08,
+        "cache_hit_ratio": 0.32
+      }
+    ]
+  },
+  "quota": {
+    "state": "cached",
+    "message": "Synthetic cached readings",
+    "rows": [
+      {
+        "id": "north",
+        "label": "North API \u00b7 daily",
+        "remaining_percent": 72,
+        "reset_label": "Saved reading \u00b7 resets tomorrow",
+        "detail": "Fixture"
+      },
+      {
+        "id": "edge",
+        "label": "Edge inference \u00b7 monthly",
+        "remaining_percent": 44,
+        "reset_label": "Saved reading \u00b7 resets in 12 days",
+        "detail": "Fixture"
+      },
+      {
+        "id": "local",
+        "label": "Local models",
+        "remaining_percent": null,
+        "reset_label": "No saved allowance",
+        "detail": "Fixture"
+      }
+    ]
+  },
+  "errors": []
+}

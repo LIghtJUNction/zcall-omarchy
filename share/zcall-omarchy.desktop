@@ -2,7 +2,7 @@
 Type=Application
 Name=Zcall
 Comment=Manage the local AI gateway from Omarchy
-Exec=zcall-omarchy open menu
+Exec=zcall-omarchy show menu
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;

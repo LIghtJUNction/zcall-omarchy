@@ -1,5 +1,5 @@
 pkgbase = zcall-omarchy
-	pkgdesc = Native Omarchy menu and bar controls for the zcalld AI gateway
+	pkgdesc = Native Omarchy panel and controls for the zcalld AI gateway
 	pkgver = @VERSION@
 	pkgrel = 1
 	url = https://github.com/LIghtJUNction/zcall-omarchy

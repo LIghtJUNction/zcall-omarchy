@@ -1,37 +1,38 @@
-# Zcall for Omarchy
+# zcall for Omarchy
 
-Zcall for Omarchy opens zcalld controls from the Omarchy menu and an optional bar button. It uses the existing terminal for forms and calls the zcalld JSON management CLI. It adds no controller service or polling process.
+A native bar panel for the [zcalld](https://github.com/LIghtJUNction/zcalld) local AI gateway. Click the bar icon to see agents, saved account limits, usage and routes. Select an agent and a model or group, then apply the change directly in the panel.
 
-The gateway remains [zcalld](https://github.com/LIghtJUNction/zcalld). This repository is its second frontend and can also be installed independently. The desktop GUI is optional.
+The panel uses Omarchy's theme, keyboard focus and popup positioning. It reads local data when opened or refreshed; it has no polling loop or separate background service. Closing it leaves the gateway running. The independent desktop GUI is optional.
 
-## What you can do
+## Four views
 
-| Screen | Operations |
+| View | What it shows and does |
 | --- | --- |
-| Status and service | Inspect health; start, stop, restart, enable or disable the user service |
-| Providers | Add or edit endpoints and protocols; enter API keys privately; list upstream models |
-| Models | Browse the catalog; create aliases; configure model groups from JSON |
-| Agents | Apply a gateway route through a supported adapter; revert owned changes |
-| Library | Manage MCP servers, instruction sets and skills; bind agents; preview, apply and revert |
-| Privacy | Inspect the active filter; select off, secrets or personal-information filtering |
-| Plugins | Install pinned community extensions; configure, enable, disable or remove them; manage the MCP endpoint |
-| Accounts | Import account files; select, enable, disable or remove existing accounts |
-| Usage, logs and updates | Inspect local totals and recent service logs; check or apply gateway updates |
+| **Agents** | Installed clients, their saved gateway route, an explicit **Apply** action and recovery of owned changes. Detection-only adapters remain read-only. |
+| **Limits** | Saved local quota readings. Missing or expired readings are shown as unavailable. Opening this view does not sign in or refresh account tokens. |
+| **Usage** | Today, 7 days, 30 days or all history; provider filtering; token, request, cost and cache summaries; a native bar chart and provider rows. |
+| **Routing** | Existing route groups and their strategies. Choose a model or group and apply it to a particular agent. There is no invented global-default setting. |
 
-The frontend uses the backend's existing validation and ownership rules. It does not implement provider HTTP requests, account refresh, privacy filtering or agent-file rewriting.
+**Refresh local data** rereads the local snapshot. It does not ask providers for a new quota reading. Usage is calculated from the existing history file with bounded working memory. A partial scan is labelled; unknown price or cache data remains unknown rather than being displayed as zero. “Today” uses the local calendar day; 7 and 30 days include today.
 
-## Requirements
+The top-right **Open** button focuses the optional desktop GUI if it is already running, or launches it with a bounded startup lock. When the GUI is absent, it opens the full controls. The **More** menu opens the existing terminal controls for service management, providers, accounts, library, privacy, plugins, logs and updates. Right-clicking the bar icon opens those full controls directly.
 
-- Omarchy **4.5**, including Quickshell and `gum`.
-- Python **3.11 or newer**, using its standard library only.
-- zcalld **0.2 or newer**, which provides the JSON management commands.
-- Optional: `zcalld-compat` for the backend's community, OAuth, privacy and advanced routing features.
+## Install the native panel
 
-The integration was checked against the installed Omarchy **4.5.0-3** package. It uses the [documented Quickshell plugin and menu-extension contracts](https://github.com/omacom/omarchy/blob/quattro/docs/omarchy-shell.md), not the older Walker menu.
+Requirements are Omarchy **4.5**, Python **3.11+**, and zcalld **0.2+**. Python uses only its standard library. Omarchy supplies Quickshell, the UI components, the configured terminal and `gum`. The optional `zcalld-compat` package provides the backend's community, OAuth, privacy and advanced-routing capabilities.
 
-## Install
+Register the frontend through Omarchy's Git plugin manager:
 
-### Arch package
+```sh
+omarchy plugin add https://github.com/LIghtJUNction/zcall-omarchy --yes
+omarchy plugin enable lightjunction.zcall --section right
+```
+
+Enabling the plugin adds a widget through Omarchy's own bar configuration. It retains other widget entries and keybindings. The panel follows the current theme and display language, with English, Simplified Chinese and Traditional Chinese strings. Its optional `language` setting overrides only this plugin (`en`, `zh-CN` or `zh-TW`). The native popup handles outside-click dismissal, other open panels and the available screen edges.
+
+### Arch package and terminal menu
+
+The AUR package adds the command and application launcher. The optional menu installer adds a separate **Zcall** section to Omarchy's normal menu:
 
 ```sh
 yay -S zcall-omarchy
@@ -39,83 +40,70 @@ zcall-omarchy install --plan
 zcall-omarchy install --apply
 ```
 
-The package owns files under `/usr/share/zcall-omarchy`, a command at `/usr/bin/zcall-omarchy`, the desktop launcher and its MIT license. Package installation does not edit your home directory.
-
-The second command shows the exact menu addition before the third writes it. The installer adds a `zcall` section to `~/.config/omarchy/extensions/omarchy-menu.jsonc` and saves a small private ownership record under `$XDG_STATE_HOME/zcall-omarchy` (normally `~/.local/state/zcall-omarchy`). It leaves existing menu entries, key bindings and the bar layout in place.
-
-After installation, open **Zcall** in Omarchy's menu, launch **Zcall** from the application launcher, or run:
+Package installation owns `/usr/share/zcall-omarchy`, the command at `/usr/bin/zcall-omarchy`, the desktop launcher and the MIT license. It does not edit a home directory from a package hook. The native bar plugin and the menu extension are independently removable; installing the package alone does not silently enable a widget.
 
 ```sh
-zcall-omarchy open
+zcall-omarchy show            # Native panel; terminal fallback if it is unavailable
+zcall-omarchy open            # Full terminal/menu controls
 zcall-omarchy open providers
 zcall-omarchy open library
 ```
 
-### Optional native bar button
+For exact registration, preview, backup and removal steps, see [installation](docs/INSTALLATION.md).
 
-Omarchy's plugin manager installs the same repository through its normal Git plugin interface:
+## Use the panel
 
-```sh
-omarchy plugin add https://github.com/LIghtJUNction/zcall-omarchy --yes
-omarchy plugin enable lightjunction.zcall --section right
-```
+- **Left click** opens or closes the panel. **Right click** opens full controls.
+- **Tab / Shift+Tab** move focus between controls; **Enter / Space** activate a focused button.
+- **Ctrl+Tab / Ctrl+Shift+Tab** switch the four views. **Ctrl+R** refreshes local data. **Escape** dismisses the current menu or closes the panel.
+- In **Agents**, choose **Change**, select a route and press **Apply**. The saved agent configuration changes through zcalld's existing adapter. Reload or restart that agent when prompted; the panel does not restart it or the gateway.
+- **Revert** requires a second explicit confirmation and delegates to the backend's ownership checks. It does not force an overwrite of user edits.
 
-The button uses Omarchy's existing bar styling. Left-click opens the controls; right-click opens status. Without a menu extension it opens the terminal controller directly. This Git installation does not require the Arch frontend package, but still needs Python, gum and zcalld.
+The usage and quota views are snapshots. They are not a live monitor, a billing statement or proof that every configured provider is currently reachable. Provider filtering includes identities present in historical usage or cached quotas, so its options are not a count of currently configured providers.
 
-The button has no status timer. Status is queried when opened, so the badge does not imply that the gateway is currently healthy.
+## Full controls
 
-### Source checkout
+The existing terminal forms remain available for detailed work:
 
-```sh
-git clone https://github.com/LIghtJUNction/zcall-omarchy
-cd zcall-omarchy
-./bin/zcall-omarchy doctor
-./bin/zcall-omarchy install --plan
-./bin/zcall-omarchy install --apply
-```
+| Area | Operations |
+| --- | --- |
+| Service | Health, start, stop, restart, enable and disable the user service |
+| Providers and models | Endpoints, protocols, private API keys, model catalog, aliases and group configuration |
+| Library | MCP servers, instructions and skills; agent bindings; preview, apply and revert |
+| Privacy and plugins | Privacy settings; pinned community extensions; MCP endpoint settings |
+| Accounts | Import, select, enable, disable and remove accounts through the backend's account store |
+| Logs and updates | Local service journal and explicit update checks or installation |
 
-Keep this checkout at its installed path, or uninstall its menu entries before moving it. The package installation uses a stable path and avoids this requirement.
+API keys are entered without terminal echo and passed through standard input. They do not become command arguments or new environment variables. Detailed library changes first show the backend's dry-run result. Unsupported adapters and ownership conflicts remain visible errors.
 
-For the separate menu and official bar registration steps, see [installation and removal](docs/INSTALLATION.md).
+The frontend does not implement provider transport, OAuth refresh, masking or agent-file rewriting. Those remain in zcalld and its optional plugins.
 
-## Daily use
+## Scripts and custom configurations
 
-Forms open in Omarchy's configured terminal. Cancel before the final apply step to leave configuration unchanged. Destructive service actions ask for confirmation. A saved configuration that needs a restart offers that action separately.
-
-API keys are read with terminal echo disabled and passed to zcalld through standard input. They do not become command arguments or newly created environment variables. Account and MCP imports use local files; the frontend never prints their raw contents. Backend errors from a credential write are withheld if they could echo the private input.
-
-Library application first displays the backend's concrete dry-run result. Apply and revert refuse ownership conflicts; there is no force-overwrite button. Agent provider setup is explicit and separate from library application.
-
-For scripts, selected read operations return JSON:
+The panel's local JSON boundary is also available for inspection:
 
 ```sh
+zcall-omarchy panel snapshot --period 7d --provider all
+zcall-omarchy panel action agent.route --payload '{"agent":"codex","route":"daily"}'
+zcall-omarchy panel action agent.revert --payload '{"agent":"codex"}'
 zcall-omarchy action status
-zcall-omarchy action providers
-zcall-omarchy action library.targets
 zcall-omarchy --config /path/to/config.conf action models
 ```
 
-`ZCALLD_CONFIG` and `ZCALLD_BIN` can select a different configuration and executable. The menu installer does not store either variable or copy credentials.
+Actions are explicit mutations. Snapshot reads do not send generation requests or refresh real provider accounts. `ZCALLD_CONFIG`, `ZCALLD_BIN`, or `--config` select the backend configuration and executable. A custom `--config` passed to `show` opens the terminal controller rather than reusing a panel bound to another configuration. The bar plugin also accepts an optional `config` setting.
 
 ## Remove or recover
-
-Preview and remove only this frontend's menu entries:
 
 ```sh
 zcall-omarchy uninstall --plan
 zcall-omarchy uninstall --apply
-```
-
-If the menu has not changed since installation, uninstall restores the original bytes and permissions. If unrelated entries were added later, it removes only its unchanged marked block. If the Zcall block itself was edited, it stops and retains both the file and the private record for review.
-
-An interrupted install can be rerun or uninstalled using that record. Do not delete the record first. Removing menu entries does not stop zcalld or change its accounts and agent settings.
-
-Remove the optional bar integration through Omarchy, then remove the Arch package if installed:
-
-```sh
-omarchy plugin remove lightjunction.zcall
+omarchy plugin remove lightjunction.zcall --yes
 sudo pacman -R zcall-omarchy
 ```
+
+Remove the menu integration before deleting its package or checkout. If that menu has not changed since installation, uninstall restores the original bytes and permissions. If unrelated entries were added later, it removes only its unchanged marked block. An edited Zcall block is preserved for review.
+
+The private ownership record lives under `$XDG_STATE_HOME/zcall-omarchy`, normally `~/.local/state/zcall-omarchy`. Keep it until uninstall or recovery completes. Removing either frontend entry leaves gateway accounts, agent settings and service state independent.
 
 ## Development and releases
 
@@ -123,13 +111,15 @@ sudo pacman -R zcall-omarchy
 python3 scripts/check.py
 ZCALLD_TEST_BINARY=/absolute/path/to/zcalld python3 scripts/check.py
 python3 scripts/validate-qml.py
+python3 scripts/validate-panel-state.py
+python3 scripts/preview-panel.py --output /tmp/zcall-panel-preview --theme dark
 python3 scripts/bump.py patch
 ```
 
-The checks cover private stdin, argument boundaries, cancellation, menu conflicts, interrupted writes and uninstall. Optional tests exercise a real zcalld binary in disposable homes. The QML check loads the widget with installed Omarchy components in an isolated offscreen shell.
+The native checks use installed Omarchy modules. The preview renders synthetic data in a separate, short-lived Wayland window and does not execute the controller. The lifecycle check uses a fake subprocess to verify lazy loading, rapid filter changes, action completion after closing and error handling. See [validation](docs/VALIDATION.md) and [integration contracts](docs/INTEGRATION.md).
 
-Routine CI is manual. GitHub's Bump version workflow also supports patch, minor and major releases and explicitly dispatches the release job. A version tag runs the formal release workflow, produces a source archive and checksums, and publishes the standard AUR recipe when repository secrets are configured. See [releasing](docs/RELEASING.md) and [validation](docs/VALIDATION.md).
+Routine CI is manual. The **Bump version** workflow supports patch, minor and major versions, then explicitly dispatches the release workflow. Formal releases check the portable tests and publish a source archive, checksums and the standard AUR recipe. Existing tags are not overwritten. See [releasing](docs/RELEASING.md).
 
 ## License
 
-MIT. Omarchy and zcalld remain separate projects with their own licenses.
+MIT. Omarchy and zcalld are separate projects with their own licenses.

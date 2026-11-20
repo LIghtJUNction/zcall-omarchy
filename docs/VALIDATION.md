@@ -1,5 +1,27 @@
 # Validation record
 
+## Native panel (0.2 development)
+
+The panel uses the installed Omarchy 4.5 `Ui.Panel`, `Ui.KeyboardPanel`, dropdowns and theme modules. The isolated native check opens the actual widget on each of the four bar edges and verifies that the card stays within its anchor screen. It checks the top-level host owner, lazy loading, Ctrl+Tab, Ctrl+R, Escape and focus after closing and reopening. Four opens plus one manual refresh execute exactly five synthetic snapshots and no actions. This checks the native host contract; it is not a claim of a manual multi-monitor desktop trial.
+
+A separate process-lifecycle fixture verifies that a closed panel does not read data, rapid filter changes keep the latest result, an explicit action is submitted once, closing does not repeat or cancel an already submitted action, and a missing executable produces an error. No timer polls the gateway.
+
+The actual QML content has been rendered with synthetic data at 560×680 and 360×580 logical pixels, in dark and light themes, with Simplified and Traditional Chinese overrides. The narrow preview asserts that all four tabs remain inside the panel. Names and messages use plain text. Agent selection has one route picker and explicit Apply/Revert controls; the backend tests run those operations against an installed zcalld binary in disposable homes, including refusal to overwrite user edits.
+
+GUI activation tests cover focusing an existing window, the private bounded startup lock, safe argv, missing-GUI terminal fallback and rejection of an unsafe lock directory. These tests do not open or change a user's running GUI.
+
+```sh
+ZCALLD_TEST_BINARY=/absolute/path/to/zcalld python3 -B scripts/check.py
+python3 -B scripts/validate-panel-state.py
+python3 -B scripts/validate-qml.py
+python3 -B scripts/preview-panel.py --output /tmp/zcall-preview --theme dark --plugin-language zh-CN
+python3 -B scripts/preview-panel.py --output /tmp/zcall-narrow --theme light --width 360 --height 580 --plugin-language zh-TW
+```
+
+The popup and preview checks require a live Wayland display and installed Omarchy modules. They start a separate short-lived test surface, use temporary configuration directories, and never install a widget or call a real provider. The portable release workflow runs the Python tests and official manifest validation when available; it does not stand in for these native desktop checks.
+
+## Initial menu frontend (0.1)
+
 The initial frontend implementation was validated on the development machine with Omarchy **4.5.0-3**. The tests use disposable homes and do not modify the active Magpie service, provider accounts or agent files.
 
 ## Checked behavior

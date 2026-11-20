@@ -2,7 +2,7 @@
 pkgname=zcall-omarchy
 pkgver=@VERSION@
 pkgrel=1
-pkgdesc='Native Omarchy menu and bar controls for the zcalld AI gateway'
+pkgdesc='Native Omarchy panel and controls for the zcalld AI gateway'
 arch=('any')
 url='https://github.com/LIghtJUNction/zcall-omarchy'
 license=('MIT')
@@ -21,7 +21,8 @@ package() {
   cd "$pkgname-$pkgver"
   install -dm755 "$pkgdir/usr/share/$pkgname/bin" "$pkgdir/usr/share/$pkgname/lib" "$pkgdir/usr/bin"
   install -m755 bin/zcall-omarchy "$pkgdir/usr/share/$pkgname/bin/zcall-omarchy"
-  install -m644 manifest.json BarWidget.qml VERSION "$pkgdir/usr/share/$pkgname/"
+  install -m644 manifest.json *.qml VERSION "$pkgdir/usr/share/$pkgname/"
+  cp -r components i18n assets "$pkgdir/usr/share/$pkgname/"
   cp -r lib/zcall_omarchy "$pkgdir/usr/share/$pkgname/lib/"
   find "$pkgdir/usr/share/$pkgname/lib" -type d -name __pycache__ -prune -exec rm -rf {} +
   find "$pkgdir/usr/share/$pkgname/lib" -type f -name '*.py' -exec chmod 644 {} +

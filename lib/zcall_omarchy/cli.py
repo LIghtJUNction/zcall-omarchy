@@ -7,16 +7,20 @@ import shutil
 import subprocess
 import sys
 
-from . import install
+from . import install, backend, desktop
 from .core import Client, Error, READ_ACTIONS, SERVICE_ACTIONS
 from .ui import Cancel, UI
 
 
-SECTIONS = {"menu", "service", *[row[0] for row in install.SECTIONS],
+SECTIONS = {"menu", "service", "gui", *[row[0] for row in install.SECTIONS],
             *["service." + action for action in SERVICE_ACTIONS]}
 
 
 def launch(root, section, config=None):
+    if section == "gui":
+        if not config and desktop.open_gui():
+            return
+        section = "menu"
     if section not in SECTIONS:
         raise Error("Unknown menu section.")
     if section == "menu" and not config and install.menu_is_installed():
@@ -31,6 +35,20 @@ def launch(root, section, config=None):
         arguments += ["--config", config]
     arguments += ["menu", section]
     os.execv(terminal, arguments)
+
+
+def show_panel(root, config=None):
+    """Use the registered native panel; keep terminal access when unavailable."""
+    command = shutil.which("omarchy-shell")
+    if command and not config:
+        try:
+            result = subprocess.run([command, "shell", "toggle", "lightjunction.zcall", "{}"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4, check=False)
+            if result.returncode == 0:
+                return
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    launch(root, "menu", config)
 
 
 def doctor(root, config):
@@ -57,13 +75,22 @@ def doctor(root, config):
 
 def main(root):
     parser = argparse.ArgumentParser(prog="zcall-omarchy",
-        description="Omarchy menus for the existing zcalld CLI; no extra daemon.")
+        description="Native Omarchy panel and controls for zcalld; no extra daemon.")
     parser.add_argument("--config", help="Use a specific zcalld configuration")
     parser.add_argument("--version", action="version", version=(root / "VERSION").read_text().strip())
     sub = parser.add_subparsers(dest="command")
     for name in ("open", "menu"):
         p = sub.add_parser(name, help="Open the desktop menu" if name == "open" else "Run terminal forms")
         p.add_argument("section", nargs="?", default="menu", choices=sorted(SECTIONS))
+    sub.add_parser("show", help="Toggle the native bar panel, with terminal fallback")
+    panel = sub.add_parser("panel", help="Bounded local JSON interface for the native panel")
+    panels = panel.add_subparsers(dest="panel_command", required=True)
+    p = panels.add_parser("snapshot")
+    p.add_argument("--period", choices=["today", "7d", "30d", "all"], default="today")
+    p.add_argument("--provider", default="all")
+    p = panels.add_parser("action")
+    p.add_argument("name", choices=["agent.route", "agent.revert"])
+    p.add_argument("--payload", required=True)
     p = sub.add_parser("action", help="Run one existing controller action and print its JSON result")
     p.add_argument("name", choices=sorted({*READ_ACTIONS, *["service." + x for x in SERVICE_ACTIONS]}))
     for name in ("install", "uninstall"):
@@ -74,13 +101,28 @@ def main(root):
     sub.add_parser("doctor", help="Inspect local capabilities without a generation request")
     args = parser.parse_args()
     try:
-        if args.command in (None, "open"):
-            launch(root, getattr(args, "section", "menu"), args.config)
+        if args.command in (None, "show"):
+            show_panel(root, args.config)
+            return 0
+        if args.command == "open":
+            launch(root, args.section, args.config)
             return 0
         if args.command == "menu":
             UI(Client(args.config)).run(args.section)
             return 0
-        if args.command == "action":
+        if args.command == "panel":
+            client = Client(args.config)
+            if args.panel_command == "snapshot":
+                value = backend.snapshot(client, args.period, args.provider)
+            else:
+                if len(args.payload.encode()) > 4096:
+                    raise Error("Panel action payload is too large.")
+                try:
+                    payload = json.loads(args.payload)
+                except ValueError:
+                    raise Error("Panel action payload must be a JSON object.") from None
+                value = backend.action(client, args.name, payload)
+        elif args.command == "action":
             value = Client(args.config).action(args.name)
         elif args.command == "doctor":
             value = doctor(root, args.config)

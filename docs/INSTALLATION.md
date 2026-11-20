@@ -1,6 +1,6 @@
 # Installing the two Omarchy entry points
 
-The menu extension and the bar widget are separate integrations. Installing the menu does not silently change the bar. Both launch the same on-demand controller.
+The menu extension and the bar widget are separate integrations. Installing the menu does not silently change the bar. The bar opens a native panel; detailed management uses the same on-demand CLI controller.
 
 ## 1. Package, application launcher and menu
 
@@ -40,7 +40,9 @@ The first command installs the Git checkout under `~/.config/omarchy/plugins/lig
 
 The enable command adds the widget to the right-hand section through Omarchy's shell IPC. **This step does change bar configuration:** the installed Omarchy 4.5 implementation persists it in `~/.config/omarchy/shell.json`, under `bar.layout.right`. Its configuration writer serializes JSON, so formatting may change. Existing widget entries and the selected bar remain semantically in place. Back up that file before a coordinated desktop installation if an exact pre-install copy is needed.
 
-Left-click opens the Zcall menu; right-click opens status in the configured terminal. There is no polling timer. Without the menu extension, the button launches the terminal controller directly.
+Left-click toggles the native Agent / Limits / Usage / Routing panel. Right-click opens full terminal controls. The panel uses Omarchy’s popup positioning and reads a local snapshot when opened or manually refreshed. Closing it does not stop zcalld. It works without the separate menu extension.
+
+The optional widget settings are `config` (an absolute zcalld configuration path) and `language` (`en`, `zh-CN` or `zh-TW`). With no language override, labels follow Omarchy. Changing this plugin setting does not change the desktop language.
 
 Inspect the installed plugin with Omarchy's normal plugin catalog. If the running shell has not completed a rescan, allow it to finish before enabling the new ID; do not modify the shell JSON by hand to bypass registration.
 
