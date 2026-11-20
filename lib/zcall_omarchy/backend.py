@@ -1,11 +1,13 @@
 """Short-lived, local-only data adapter for the Omarchy popup.
 
-No provider hooks, login, refresh, or generation calls belong here. The caller
-runs snapshot() asynchronously when opened/refreshed. History is streamed up to
+Snapshot never calls provider hooks, login, refresh, or generation. An explicit
+quota.refresh delegates a selected account to the credential-owning helper.
+The caller runs snapshot() asynchronously when opened/refreshed. History is streamed up to
 its opening size; the limits below bound memory and work even for malformed logs.
 Agent changes use the controller's existing backed-up apply/revert operations.
 """
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 import json
 import math
 import os
@@ -15,6 +17,7 @@ import sys
 import time
 
 from .core import Error, text
+from . import pricing
 
 MAX_LINE = 1024 * 1024
 MAX_JSON = 8 * 1024 * 1024
@@ -229,7 +232,7 @@ class _Window:
         return []
 
 
-def _metrics(row):
+def _metrics(row, prices=None):
     native = "input_tokens" in row or "output_tokens" in row
     incoming = _count(row.get("input_tokens" if native else "in"))
     outgoing = _count(row.get("output_tokens" if native else "out"))
@@ -257,8 +260,15 @@ def _metrics(row):
     if cost is None and not native:
         # Magpie OwnCost is explicitly documented as USD, not plan credits.
         cost = _number(row.get("cost"))
+    basis, reason = ("recorded", None) if cost is not None else (None, "model_price_missing")
+    if cost is not None:
+        cost = Decimal(str(cost))
+    elif prices is not None:
+        cost, reason = prices.estimate(row)
+        basis = "saved_prices" if cost is not None else None
     return {"input_tokens": incoming, "output_tokens": outgoing, "tokens": tokens,
-            "cached_tokens": cached, "failures": failed, "cost_usd": cost}
+            "cached_tokens": cached, "failures": failed, "cost_usd": cost,
+            "cost_basis": basis, "unpriced_reason": reason}
 
 
 class _Totals:
@@ -268,6 +278,8 @@ class _Totals:
         self.requests = 0
         self.sums = {key: 0 for key in self.FIELDS}
         self.known = {key: 0 for key in self.FIELDS}
+        self.cost_sources = {"recorded": 0, "saved_prices": 0}
+        self.unpriced_reasons = {}
 
     def add(self, values):
         self.requests += 1
@@ -276,14 +288,27 @@ class _Totals:
             if value is not None:
                 self.sums[key] += value
                 self.known[key] += 1
+        if values.get("cost_basis") in self.cost_sources:
+            self.cost_sources[values["cost_basis"]] += 1
+        if values["cost_usd"] is None:
+            reason = values.get("unpriced_reason") or "model_price_missing"
+            self.unpriced_reasons[reason] = self.unpriced_reasons.get(reason, 0) + 1
 
     def value(self):
         result = {key: self.sums[key] if self.known[key] == self.requests else None for key in self.FIELDS}
+        if result["cost_usd"] is not None:
+            result["cost_usd"] = float(result["cost_usd"])
         result["requests"] = self.requests
         incoming, cached = result["input_tokens"], result["cached_tokens"]
         result["cache_hit_ratio"] = cached / incoming if incoming and cached is not None and cached <= incoming else None
         result["priced_requests"] = self.known["cost_usd"]
-        result["known_cost_usd"] = self.sums["cost_usd"] if self.known["cost_usd"] else None
+        result["known_cost_usd"] = float(self.sums["cost_usd"]) if self.known["cost_usd"] else None
+        result["unpriced_requests"] = self.requests - self.known["cost_usd"]
+        result["recorded_requests"] = self.cost_sources["recorded"]
+        result["estimated_requests"] = self.cost_sources["saved_prices"]
+        sources = [key for key, count in self.cost_sources.items() if count]
+        result["cost_basis"] = sources[0] if len(sources) == 1 else "mixed" if sources else "none"
+        result["unpriced_reasons"] = dict(self.unpriced_reasons)
         result["known_tokens"] = self.sums["tokens"] if self.known["tokens"] else None
         result["token_requests"] = self.known["tokens"]
         return result
@@ -298,7 +323,7 @@ def _provider(row, aliases, route_provider):
     return route_provider.get(selected) or route_provider.get(public) or UNKNOWN_PROVIDER
 
 
-def _history(path, window, provider_filter, providers, aliases, route_provider):
+def _history(path, window, provider_filter, providers, aliases, route_provider, prices=None):
     totals, by_provider = _Totals(), {}
     buckets = {label: _Totals() for label in window.labels()}
     scan = {"bytes": 0, "records": 0, "matched": 0, "invalid": 0, "oversized": 0,
@@ -373,7 +398,7 @@ def _history(path, window, provider_filter, providers, aliases, route_provider):
             identity = _provider(row, aliases, route_provider)
             if provider_filter != "all" and identity != provider_filter:
                 continue
-            values = _metrics(row)
+            values = _metrics(row, prices)
             totals.add(values)
             buckets.setdefault(label, _Totals()).add(values)
             if identity not in by_provider and len(by_provider) >= MAX_PROVIDERS:
@@ -397,7 +422,9 @@ def _history(path, window, provider_filter, providers, aliases, route_provider):
     if scan["partial"]:
         notes.append("Some history was skipped or limited; totals and chart cover only the records read.")
     if totals.requests and totals.known["cost_usd"] < totals.requests:
-        notes.append("USD cost is unknown for unpriced requests; no price is estimated.")
+        notes.append("Some requests remain unpriced; known USD amounts cover only priced requests.")
+    if totals.cost_sources["saved_prices"]:
+        notes.append("Estimates use saved model base prices, not provider invoices or historical tariffs.")
     if totals.requests and totals.known["tokens"] < totals.requests:
         notes.append("Some requests do not report token counts.")
     if not totals.requests:
@@ -475,6 +502,88 @@ def _quotas(directory, provider_filter, providers, aliases, now):
     return result
 
 
+_QUOTA_REASONS = {
+    "unsupported", "capability_unknown", "plugin_unavailable", "plugin_disabled",
+    "account_unavailable", "account_disabled", "external_owner", "invalid_account",
+    "timeout", "provider_error", "account_or_plugin_changed", "cache_limit"}
+
+
+def _managed_quotas(client, result, provider_filter, providers, aliases, now):
+    """Read capability metadata and explicit-refresh cache; never start a host."""
+    result["accounts"] = []
+    result["refresh_available"] = False
+    try:
+        local = client.call(["plugins", "quota", "list"], timeout=8)
+        if (not isinstance(local, dict) or local.get("schema_version") != 1
+                or local.get("local_only") is not True):
+            raise ValueError("Unsupported local quota contract")
+    except (Error, OSError, ValueError, TypeError, RecursionError):
+        result["message"] += " Explicit quota updates require zcalld-compat 0.1.6 or newer; imported cache is retained."
+        return result
+    result["refresh_available"] = True
+    accounts = {}
+    for row in _rows(local, "accounts"):
+        account, identity = _id(row.get("id")), _id(row.get("provider"))
+        if not account or not identity:
+            continue
+        identity = aliases.get(identity, identity)
+        if provider_filter != "all" and identity != provider_filter:
+            continue
+        raw_reason = row.get("reason")
+        reason = raw_reason if isinstance(raw_reason, str) and raw_reason in _QUOTA_REASONS else ""
+        enabled = row.get("enabled") is True
+        item = {"id": account, "provider": identity, "label": _label(row.get("label")) or _label(account),
+                "can_refresh": enabled and row.get("can_refresh") is True and not reason,
+                "reason": reason, "cached_at": None}
+        at = _timestamp(row.get("cached_at"))
+        if at is not None:
+            item["cached_at"] = datetime.fromtimestamp(at, timezone.utc).isoformat()
+        accounts[account] = item
+    result["accounts"] = list(accounts.values())
+    new_rows = []
+    for reading in _rows(local, "readings"):
+        account = _id(reading.get("account"))
+        if account not in accounts:
+            continue
+        metadata = accounts[account]
+        at = _timestamp(reading.get("at"))
+        windows = reading.get("windows")
+        if not isinstance(windows, list):
+            continue
+        for index, window in enumerate(windows[:64] or [{}]):
+            if not isinstance(window, dict):
+                continue
+            used = _number(window.get("used"))
+            remaining = 100 - used if used is not None and used <= 100 else None
+            if window.get("balance") is not None:
+                remaining = None
+            reset = _timestamp(window.get("resetsAt"))
+            seconds = _number(window.get("resetSecs"))
+            if reset is None and at is not None and seconds:
+                reset = at + seconds
+            expired = reset is not None and reset <= now
+            name = _label(window.get("name"))
+            new_rows.append({"id": f"account-quota-{len(new_rows)}", "account": account,
+                "provider": metadata["provider"], "label": metadata["label"] + (" · " + name if name else ""),
+                "remaining_percent": None if expired else remaining, "last_known_percent": remaining,
+                "cached_at": datetime.fromtimestamp(at, timezone.utc).isoformat() if at is not None else None,
+                "expired": expired, "source": "explicit_refresh",
+                "detail": "Saved explicit quota reading; opening this panel did not contact the provider.",
+                "reset_label": datetime.fromtimestamp(reset).astimezone().strftime("%m-%d %H:%M") if reset is not None else None})
+            if len(new_rows) == MAX_QUOTA_ROWS:
+                break
+        if len(new_rows) == MAX_QUOTA_ROWS:
+            break
+    result["rows"] = (new_rows + result["rows"])[:MAX_QUOTA_ROWS]
+    if new_rows:
+        result["state"] = "cached"
+        result["message"] = "Saved quota readings only. Use an account's explicit update to contact its supported provider."
+    if len(result["rows"]) == MAX_QUOTA_ROWS:
+        result["state"] = "partial"
+        result["message"] += " Additional cached windows may be omitted."
+    return result
+
+
 def snapshot(client, period="today", provider="all"):
     """Return a whitelisted snapshot; do not forward raw CLI or history records."""
     if provider != "all" and not _id(provider):
@@ -497,8 +606,11 @@ def snapshot(client, period="today", provider="all"):
         usage_path = Path(configured_path)
         if not usage_path.is_absolute():
             usage_path = directory / usage_path
-    usage = _history(usage_path, window, provider, providers, aliases, route_provider)
+    prices = pricing.load(directory, _read_json, _rows(route_data, "routes"), aliases)
+    usage = _history(usage_path, window, provider, providers, aliases, route_provider, prices)
+    usage["pricing"] = prices.info
     quotas = _quotas(directory, provider, providers, aliases, now)
+    quotas = _managed_quotas(client, quotas, provider, providers, aliases, now)
     for row in usage["providers"] + quotas["rows"]:
         identity = row.get("provider", row["id"])
         if identity not in providers and len(providers) < MAX_PROVIDERS:
@@ -525,6 +637,27 @@ def snapshot(client, period="today", provider="all"):
 def action(client, name, payload):
     """Invoke one supported, explicit agent edit through the existing controller."""
     failure = {"ok": False, "error": "Unsupported panel action."}
+    if name == "quota.refresh":
+        if not isinstance(payload, dict) or set(payload) != {"account"} or not _id(payload["account"]):
+            return {"ok": False, "error": "Invalid quota account."}
+        account = payload["account"]
+        try:
+            local = client.call(["plugins", "quota", "list"], timeout=8)
+            if not isinstance(local, dict) or local.get("local_only") is not True:
+                raise ValueError("Unsupported quota helper")
+            selected = next((row for row in _rows(local, "accounts") if row.get("id") == account), None)
+            if selected is None or selected.get("enabled") is not True or selected.get("can_refresh") is not True:
+                return {"ok": False, "error": "This account does not support an explicit quota update."}
+            result = client.call(["plugins", "quota", "refresh", "--account", account], timeout=75)
+        except (Error, OSError, ValueError, TypeError, RecursionError):
+            return {"ok": False, "error": "Quota update did not confirm a saved reading. Reread the local cache before trying again."}
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            code = result.get("error") if isinstance(result, dict) else None
+            return {"ok": False, "error": "Quota update failed; previous cached readings were retained.",
+                    "error_code": code if isinstance(code, str) and code in _QUOTA_REASONS else "provider_error"}
+        return {"ok": True, "error": None, "action": name,
+                "message": "Quota reading saved. Refresh the panel to display the new local cache.",
+                "restart_required": False, "agent_restart_required": False}
     if name not in {"agent.route", "agent.revert"}:
         return failure
     expected = {"agent", "route"} if name == "agent.route" else {"agent"}

@@ -28,6 +28,7 @@ class FakeClient:
             ("status",): {"healthy": True, "service": "active", "version": "0.2.4",
                           "socket": "/private/path", "error": "PRIVATE-CANARY"},
             ("privacy", "show"): {"enabled": True, "runtime_state": "not_checked"},
+            ("plugins", "quota", "list"): {"schema_version": 1, "local_only": True, "accounts": [], "readings": []},
             ("providers", "list"): {"providers": [
                 {"name": "p-alpha", "base_url": "https://secret.invalid/?key=PRIVATE-CANARY"},
                 {"name": "p-beta"}]},
@@ -138,7 +139,7 @@ class SnapshotTests(Fixture):
         self.assertIsNone(value["totals"]["cost_usd"])
         self.assertEqual(value["totals"]["known_cost_usd"], 1.25)
         self.assertEqual(value["totals"]["priced_requests"], 1)
-        self.assertIn("no price is estimated", value["message"])
+        self.assertIn("Some requests remain unpriced", value["message"])
 
     def test_provider_and_local_calendar_filters(self):
         self.history([self.legacy(), self.native(),
@@ -262,7 +263,8 @@ class SnapshotTests(Fixture):
         self.assertNotIn("PRIVATE-CANARY", encoded)
         self.assertNotIn("/private/path", encoded)
         self.assertEqual(self.client.calls, [["status"], ["providers", "list"], ["routes", "list"],
-                                            ["groups", "list"], ["agents", "list"], ["privacy", "show"]])
+                                             ["groups", "list"], ["agents", "list"], ["privacy", "show"],
+                                             ["plugins", "quota", "list"]])
         self.assertFalse(value["routing"]["can_set_default"])
         self.assertIsNone(value["routing"]["default_route"])
         self.assertEqual(value["status"]["privacy_runtime_state"], "not_checked")
@@ -398,6 +400,144 @@ class NativeActionTests(Fixture):
             denied = backend.action(client, "agent.revert", {"agent": "gemini"})
             self.assertFalse(denied["ok"])
             self.assertEqual(settings.read_bytes(), edited)
+
+
+class SavedPricingTests(Fixture):
+    def prices(self, **overrides):
+        price = {"prompt": "0.000002", "completion": "0.000008",
+                 "input_cache_read": "0.0000002", "input_cache_write": "0.0000025"}
+        price.update(overrides)
+        self.saved("model-catalog.json", {"data": [
+            {"id": "alpha/model", "pricing": price},
+            {"id": "beta/model", "pricing": price}]})
+
+    def test_saved_per_token_prices_split_cache_and_do_not_add_reasoning_twice(self):
+        self.prices()
+        self.history([self.legacy(model="model", reasoning=999)])
+        value = self.snap()["usage"]
+        self.assertAlmostEqual(value["totals"]["cost_usd"], 0.000391)
+        self.assertEqual(value["totals"]["cost_basis"], "saved_prices")
+        self.assertEqual(value["totals"]["estimated_requests"], 1)
+        self.assertEqual(value["pricing"]["priced_models"], 2)
+        self.assertIsNotNone(value["pricing"]["updated_at"])
+        self.assertIn("not provider invoices", value["message"])
+
+    def test_recorded_amount_has_priority_including_zero(self):
+        self.prices()
+        self.history([self.legacy(model="model", cost=0), self.legacy(model="model")])
+        value = self.snap()["usage"]["totals"]
+        self.assertEqual(value["cost_basis"], "mixed")
+        self.assertEqual((value["recorded_requests"], value["estimated_requests"]), (1, 1))
+        self.assertAlmostEqual(value["known_cost_usd"], 0.000391)
+
+    def test_native_missing_cache_breakdown_preserves_partial_price_coverage(self):
+        self.prices()
+        self.history([self.legacy(model="model"), self.native()])
+        value = self.snap()["usage"]
+        total = value["totals"]
+        self.assertIsNone(total["cost_usd"])
+        self.assertEqual((total["priced_requests"], total["unpriced_requests"]), (1, 1))
+        self.assertAlmostEqual(total["known_cost_usd"], 0.000391)
+        self.assertEqual(total["unpriced_reasons"], {"cache_breakdown_missing": 1})
+        self.assertEqual(value["providers"][0]["priced_requests"], 1)
+
+    def test_native_complete_cache_fields_use_total_input_semantics(self):
+        self.prices()
+        self.history([self.native(cache_read_tokens=20, cache_write_tokens=10)])
+        total = self.snap()["usage"]["totals"]
+        self.assertAlmostEqual(total["cost_usd"], 30 * .000002 + 10 * .000008 + 20 * .0000002 + 10 * .0000025)
+
+    def test_complex_or_unknown_costs_are_not_silently_estimated(self):
+        self.prices()
+        cases = [({"cache_unknown": True}, "cache_breakdown_missing"),
+                 ({"cache_write_1h": 10}, "one_hour_cache_price_missing"),
+                 ({"tier_sent": "priority"}, "service_tier_unknown"),
+                 ({"tier_served": {"bad": True}}, "service_tier_unknown"),
+                 ({"in": 210000}, "context_tier_price_missing"),
+                 ({"served": "another-unknown-model"}, "served_model_price_missing")]
+        for extra, reason in cases:
+            with self.subTest(reason=reason):
+                self.history([self.legacy(model="model", **extra)])
+                total = self.snap()["usage"]["totals"]
+                self.assertIsNone(total["known_cost_usd"])
+                self.assertEqual(total["unpriced_reasons"], {reason: 1})
+
+    def test_explicit_upstream_name_is_not_misclassified_as_swapped(self):
+        self.prices()
+        self.history([self.legacy(model="model", served="underlying")])
+        self.assertEqual(self.snap()["usage"]["totals"]["priced_requests"], 1)
+
+    def test_missing_cache_price_is_unknown_only_when_that_cache_is_used(self):
+        self.prices(input_cache_read=None)
+        self.history([self.legacy(model="model")])
+        self.assertIsNone(self.snap()["usage"]["totals"]["known_cost_usd"])
+        self.history([self.legacy(model="model", cache_read=0)])
+        self.assertEqual(self.snap()["usage"]["totals"]["priced_requests"], 1)
+
+    def test_invalid_duplicate_price_and_unreadable_catalog_do_not_erase_recorded_cost(self):
+        for catalog in [b"bad", json.dumps({"data": [{"id": "alpha/model", "pricing": {"prompt": "NaN", "completion": "1"}}]}).encode(),
+                        json.dumps({"data": [{"id": "alpha/model", "pricing": {"prompt": "1", "completion": "1"}}] * 2}).encode()]:
+            (self.directory / "model-catalog.json").write_bytes(catalog)
+            self.history([self.legacy(model="model", cost=1.25), self.legacy(model="model")])
+            total = self.snap()["usage"]["totals"]
+            self.assertEqual(total["known_cost_usd"], 1.25)
+            self.assertEqual(total["priced_requests"], 1)
+
+
+class ExplicitQuotaTests(Fixture):
+    def metadata(self, **overrides):
+        row = {"id": "quota#opaque", "provider": "alpha", "label": "Fixture account",
+               "enabled": True, "can_refresh": True, "reason": "", "cached_at": "2026-11-20T10:00:00Z"}
+        row.update(overrides)
+        self.client.data[("plugins", "quota", "list")] = {
+            "schema_version": 1, "local_only": True, "accounts": [row],
+            "readings": [{"account": "quota#opaque", "at": "2026-11-20T10:00:00Z",
+                          "windows": [{"name": "Daily", "used": 25}], "auth": "PRIVATE-CANARY"}]}
+
+    def test_snapshot_reads_only_local_capabilities_and_cache(self):
+        self.metadata()
+        quota = self.snap()["quota"]
+        self.assertTrue(quota["accounts"][0]["can_refresh"])
+        self.assertEqual(quota["rows"][0]["remaining_percent"], 75)
+        self.assertNotIn("PRIVATE-CANARY", json.dumps(quota))
+        self.assertFalse(any("refresh" in args or "invoke" in args for args in self.client.calls))
+
+    def test_old_helper_keeps_imported_cache_and_marks_refresh_unavailable(self):
+        self.saved("quotas.json", {"old": {"at": "2026-11-20T10:00:00Z", "quota": {
+            "provider": "alpha", "windows": [{"used": 10}]}}})
+        self.client.data[("plugins", "quota", "list")] = Error("unknown command PRIVATE-CANARY")
+        value = self.snap()["quota"]
+        self.assertEqual(value["rows"][0]["remaining_percent"], 90)
+        self.assertFalse(value["refresh_available"])
+        self.assertIn("0.1.6", value["message"])
+        self.assertNotIn("PRIVATE-CANARY", json.dumps(value))
+
+    def test_explicit_refresh_targets_one_eligible_account_without_secret_input(self):
+        self.metadata()
+        result = backend.action(self.client, "quota.refresh", {"account": "quota#opaque"})
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.client.calls, [["plugins", "quota", "list"],
+            ["plugins", "quota", "refresh", "--account", "quota#opaque"]])
+        self.assertFalse(result["restart_required"])
+
+    def test_disabled_unsupported_and_invalid_payload_do_not_refresh(self):
+        for extra in [{"enabled": False}, {"can_refresh": False, "reason": "unsupported"}]:
+            self.metadata(**extra)
+            self.client.calls.clear()
+            self.assertFalse(backend.action(self.client, "quota.refresh", {"account": "quota#opaque"})["ok"])
+            self.assertFalse(any("refresh" in args for args in self.client.calls))
+        self.client.calls.clear()
+        self.assertFalse(backend.action(self.client, "quota.refresh", {"account": "--config"})["ok"])
+        self.assertEqual(self.client.calls, [])
+
+    def test_refresh_errors_never_forward_raw_provider_diagnostic(self):
+        self.metadata()
+        self.client.data[("plugins", "quota", "refresh", "--account", "quota#opaque")] = {
+            "ok": False, "error": "PRIVATE-CANARY", "token": "PRIVATE-CANARY"}
+        value = backend.action(self.client, "quota.refresh", {"account": "quota#opaque"})
+        self.assertFalse(value["ok"])
+        self.assertEqual(value["error_code"], "provider_error")
+        self.assertNotIn("PRIVATE-CANARY", json.dumps(value))
 
 
 if __name__ == "__main__":
