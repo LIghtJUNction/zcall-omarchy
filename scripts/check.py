@@ -11,7 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 version = (ROOT / "VERSION").read_text().strip()
 manifest = json.loads((ROOT / "manifest.json").read_text())
-if not re.fullmatch(r"0|[1-9][0-9]*", version.split(".")[0]) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
+if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", version):
     raise SystemExit("VERSION must be a numeric semantic version.")
 if manifest["version"] != version or manifest["id"] != "lightjunction.zcall":
     raise SystemExit("Plugin manifest and VERSION are inconsistent.")

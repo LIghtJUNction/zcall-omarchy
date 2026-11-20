@@ -1,0 +1,14 @@
+name: Manual checks
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check source and isolated frontend fixtures
+        run: python3 scripts/check.py
