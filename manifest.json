@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "lightjunction.zcall",
+  "name": "Zcall",
+  "version": "0.1.0",
+  "author": "LIghtJUNction",
+  "description": "Manage the zcalld local AI gateway from Omarchy",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Zcall",
+    "description": "Local AI gateway menu; no background polling",
+    "category": "Development",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
