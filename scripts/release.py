@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Build a reproducible archive and a pinned, standard AUR recipe."""
 import argparse
-import gzip
 import hashlib
-import io
 import json
 from pathlib import Path
 import re
@@ -28,15 +26,13 @@ manifest = json.loads(git("show", commit + ":manifest.json"))
 if manifest["version"] != version or (args.ref != "HEAD" and args.ref != "v" + version):
     raise SystemExit("Tag, VERSION and plugin manifest must agree")
 name = "zcall-omarchy-" + version
-tar = git("archive", "--format=tar", "--prefix=" + name + "/", commit)
-compressed = io.BytesIO()
-with gzip.GzipFile(fileobj=compressed, mode="wb", filename="", mtime=0, compresslevel=9) as output:
-    output.write(tar)
-archive = compressed.getvalue()
+# A plain tar keeps release bytes independent of the host's zlib variant.
+# The complete frontend source is small; no compressor or container is needed.
+archive = git("-c", "tar.umask=0022", "archive", "--format=tar", "--prefix=" + name + "/", commit)
 sha = hashlib.sha256(archive).hexdigest()
 args.output.mkdir(parents=True, exist_ok=True)
-(args.output / (name + ".tar.gz")).write_bytes(archive)
-(args.output / "SHA256SUMS").write_text(sha + "  " + name + ".tar.gz\n")
+(args.output / (name + ".tar")).write_bytes(archive)
+(args.output / "SHA256SUMS").write_text(sha + "  " + name + ".tar\n")
 aur = args.output / "aur"
 aur.mkdir(exist_ok=True)
 for template, target in (("PKGBUILD.in", "PKGBUILD"), ("SRCINFO.in", ".SRCINFO")):
@@ -44,6 +40,6 @@ for template, target in (("PKGBUILD.in", "PKGBUILD"), ("SRCINFO.in", ".SRCINFO")
     (aur / target).write_text(source.replace("@VERSION@", version).replace("@SHA256@", sha))
 (args.output / "zcall-omarchy.SRCINFO").write_bytes((aur / ".SRCINFO").read_bytes())
 record = {"project": "zcall-omarchy", "version": version, "commit": commit,
-          "archive": name + ".tar.gz", "sha256": sha}
+          "archive": name + ".tar", "sha256": sha}
 (args.output / "release.json").write_text(json.dumps(record, indent=2) + "\n")
 print(json.dumps(record))

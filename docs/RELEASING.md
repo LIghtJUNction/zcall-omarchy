@@ -16,6 +16,9 @@ The **Manual checks** workflow is available through workflow dispatch. Ordinary 
 
 ## Bump and publish
 
+The **Bump version** workflow also accepts patch, minor or major through GitHub's Run workflow interface. It runs the same checks and atomic branch/tag push, then explicitly dispatches Release. This dispatch is required because a tag pushed with GITHUB_TOKEN does not itself trigger another push workflow.
+
+
 For a version-only working diff:
 
 ```sh
@@ -30,9 +33,11 @@ python3 scripts/bump.py patch --release
 
 The command updates both version files, runs checks, commits them, creates an annotated tag and pushes the branch and tag atomically. `minor`, `major` and an exact version are supported. The first release can tag the current version with `python3 scripts/bump.py 0.1.0 --release`.
 
-The tag workflow checks the source, creates a reproducible tar.gz archive and SHA256SUMS, publishes a GitHub release and optionally publishes the AUR recipe. The source-info release asset is explicitly named zcall-omarchy.SRCINFO because GitHub renames leading-dot asset names; the AUR checkout still uses the required .SRCINFO filename. Version tags and existing assets are immutable. A retry compares existing assets byte for byte before continuing; it never uses an overwrite flag.
+The tag workflow checks the source, creates a reproducible tar archive and SHA256SUMS, publishes a GitHub release and optionally publishes the AUR recipe. The source-info release asset is explicitly named zcall-omarchy.SRCINFO because GitHub renames leading-dot asset names; the AUR checkout still uses the required .SRCINFO filename. Version tags and existing assets are immutable. A retry compares existing assets byte for byte before continuing; it never uses an overwrite flag.
 
-If a push fails after the local tag is created, inspect the remote branch and tag before retrying. Do not move an already published tag. Fix a published issue in the next version.
+Before publication, a failed check or confirmed failed atomic push restores only this operation's version files and removes its new local tag/commit. Unrelated files are preserved. If the remote cannot be checked, local state is retained for review. Once a remote tag exists, it is immutable: resume Release with that tag instead of rolling it back. Fix a published issue in the next version.
+
+Source archives use plain tar with a fixed file-mode mask. This keeps their checksum independent of the installed compression-library version.
 
 ## AUR publication
 

@@ -7,8 +7,9 @@ arch=('any')
 url='https://github.com/LIghtJUNction/zcall-omarchy'
 license=('MIT')
 depends=('python>=3.11' 'gum' 'omarchy>=4.5.0' 'zcalld>=0.2.0')
+checkdepends=('git')
 optdepends=('zcalld-compat: community providers, OAuth, privacy and advanced routing')
-source=("$pkgname-$pkgver.tar.gz::$url/releases/download/v$pkgver/$pkgname-$pkgver.tar.gz")
+source=("$pkgname-$pkgver.tar::$url/releases/download/v$pkgver/$pkgname-$pkgver.tar")
 sha256sums=('@SHA256@')
 
 check() {

@@ -4,11 +4,13 @@ The initial frontend implementation was validated on the development machine wit
 
 ## Checked behavior
 
-- **19 tests passed:** private stdin, no shell interpretation of arguments, cancellation, menu ownership conflicts, interrupted-install recovery, exact original-menu restoration and preservation of later unrelated menu entries.
+- **23 tests passed:** private stdin, no shell interpretation of arguments, cancellation, menu ownership conflicts, interrupted-install recovery, exact original-menu restoration and preservation of later unrelated menu entries.
 - The generated actions passed the **installed Omarchy MenuModel.js parser**, including paths with spaces, quotes and comma-plus-brace characters. This matters because its trailing-comma handling uses a regular expression.
 - The **official omarchy-plugin-validate command passed** for this repository.
 - The real **Quickshell executable instantiated BarWidget.qml** using the installed Omarchy Ui and Commons modules. The isolated offscreen process checked nonzero dimensions and exited. It did not modify the running desktop shell or install a bar item.
-- Three of the 19 tests used the actual zcalld release binary: provider-key persistence through stdin and route/catalog updates; instruction preview, application, edited-block refusal and revert; private MCP listing and preservation of an unrelated MCP server on revert.
+- Three of the 23 tests used the actual zcalld release binary: provider-key persistence through stdin and route/catalog updates; instruction preview, application, edited-block refusal and revert; private MCP listing and preservation of an unrelated MCP server on revert.
+
+Four additional fixtures use actual temporary Git remotes: failed-check rollback, confirmed failed-push rollback, retained publication after a lost acknowledgement, and refusal to overwrite an existing tag.
 
 The frontend's menu transaction restores original bytes when the installed file is otherwise unchanged. Library operations delegate their ownership rules to zcalld: the backend removes the managed instruction block and preserves user text and surrounding separator whitespace. These are distinct contracts.
 

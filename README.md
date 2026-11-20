@@ -128,7 +128,7 @@ python3 scripts/bump.py patch
 
 The checks cover private stdin, argument boundaries, cancellation, menu conflicts, interrupted writes and uninstall. Optional tests exercise a real zcalld binary in disposable homes. The QML check loads the widget with installed Omarchy components in an isolated offscreen shell.
 
-Routine CI is manual. A version tag runs the formal release workflow, produces a source archive and checksums, and publishes the standard AUR recipe when repository secrets are configured. See [releasing](docs/RELEASING.md) and [validation](docs/VALIDATION.md).
+Routine CI is manual. GitHub's Bump version workflow also supports patch, minor and major releases and explicitly dispatches the release job. A version tag runs the formal release workflow, produces a source archive and checksums, and publishes the standard AUR recipe when repository secrets are configured. See [releasing](docs/RELEASING.md) and [validation](docs/VALIDATION.md).
 
 ## License
 

@@ -5,12 +5,13 @@ pkgbase = zcall-omarchy
 	url = https://github.com/LIghtJUNction/zcall-omarchy
 	arch = any
 	license = MIT
+	checkdepends = git
 	depends = python>=3.11
 	depends = gum
 	depends = omarchy>=4.5.0
 	depends = zcalld>=0.2.0
 	optdepends = zcalld-compat: community providers, OAuth, privacy and advanced routing
-	source = zcall-omarchy-@VERSION@.tar.gz::https://github.com/LIghtJUNction/zcall-omarchy/releases/download/v@VERSION@/zcall-omarchy-@VERSION@.tar.gz
+	source = zcall-omarchy-@VERSION@.tar::https://github.com/LIghtJUNction/zcall-omarchy/releases/download/v@VERSION@/zcall-omarchy-@VERSION@.tar
 	sha256sums = @SHA256@
 
 pkgname = zcall-omarchy

@@ -1,0 +1,49 @@
+name: Bump version
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version component to increment
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: bump-version
+  cancel-in-progress: false
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    env:
+      BUMP_VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Configure release identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Check, bump, and atomically publish branch and tag
+        run: python3 scripts/bump.py "$BUMP_VERSION" --release
+      - name: Explicitly dispatch the formal release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(cat VERSION)
+          tag="v$version"
+          if ! gh workflow run release.yml --ref main --field "tag=$tag"; then
+            printf '%s\n' "Tag $tag is published and will not be moved. Dispatch Release with tag=$tag to resume." >&2
+            exit 1
+          fi
+          printf 'Published immutable tag **%s** and dispatched the Release workflow.\n' "$tag" >> "$GITHUB_STEP_SUMMARY"
+      - name: Explain recovery after a failed step
+        if: failure()
+        run: |
+          printf '%s\n' 'Unpublished bump changes are rolled back by bump.py. A published tag is retained; resume the Release workflow with that exact tag.'
