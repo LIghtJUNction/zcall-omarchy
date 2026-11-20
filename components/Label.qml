@@ -1,11 +1,11 @@
 import QtQuick
-import qs.Commons as Commons
 import qs.Commons
+import "."
 
 Text {
     textFormat: Text.PlainText
-    color: Commons.Color.popups.text
-    font.family: Style.font.family
-    font.pixelSize: Style.font.body
+    color: Ink.text
+    font.family: Ink.fontFamily
+    font.pixelSize: Ink.body
     elide: Text.ElideRight
 }

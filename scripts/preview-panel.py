@@ -112,7 +112,7 @@ ShellRoot {
     Component.onCompleted: {
         var component = Qt.createComponent(SOURCE)
         if (component.status !== Component.Ready) { console.error(component.errorString()); Qt.quit(); return }
-        shell.tested = component.createObject(holder, {width:holder.width, height:holder.height, dataSource:source, brandIcon:ICON, languageOverride:PLUGIN_LANGUAGE})
+        shell.tested = component.createObject(holder, {width:holder.width, height:holder.height, dataSource:source, brandIcon:ICON, languageOverride:PLUGIN_LANGUAGE, surfaceInset:16})
         if (!shell.tested) { console.error(component.errorString()); Qt.quit(); return }
         shell.tested.chooseAgent(source.snapshot.agents[0])
         shell.tested.forceActiveFocus()

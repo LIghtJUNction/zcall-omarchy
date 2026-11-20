@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons as Commons
 import qs.Commons
+import "."
 
 Item {
     id: root
@@ -46,7 +47,7 @@ Item {
         var unit = suffix === "B" ? 1000000000 : suffix === "M" ? 1000000 : suffix === "k" ? 1000 : 1
         return Commons.I18n.formatNumber(n / unit, suffix ? 1 : 0) + suffix
     }
-    Label { width: parent.width; text: root.hoveredLabel || root.compact(root.hasValues ? root.maximum : null); font.pixelSize: Style.font.caption; opacity: 0.65 }
+    Label { width: parent.width; text: root.hoveredLabel || root.compact(root.hasValues ? root.maximum : null); font.pixelSize: Ink.caption; opacity: 0.65 }
     Item {
         id: plot
         anchors { left: parent.left; right: parent.right; top: parent.top; bottom: parent.bottom; topMargin: Style.space(25); bottomMargin: Style.space(23) }
@@ -56,7 +57,7 @@ Item {
                 required property int index
                 x: 0; y: plot.height * index / 2
                 width: plot.width; height: 1
-                color: Qt.alpha(Commons.Color.popups.text, 0.08)
+                color: Qt.alpha(Ink.text, 0.08)
             }
         }
         Row {
@@ -76,7 +77,7 @@ Item {
                         width: parent.width
                         height: slot.amount > 0 && root.maximum > 0 ? Math.max(2, plot.height * slot.amount / root.maximum) : 0
                         radius: Math.min(Style.space(2), width / 3)
-                        color: Commons.Color.accent
+                        color: Ink.accent
                         opacity: hover.containsMouse ? 1 : 0.72
                     }
                     MouseArea {
@@ -89,7 +90,7 @@ Item {
                 }
             }
         }
-        Label { anchors.centerIn: parent; visible: root.maximum <= 0; text: root.hasValues ? root.emptyText : root.unknownText; font.pixelSize: Style.font.caption; opacity: 0.65 }
+        Label { anchors.centerIn: parent; visible: root.maximum <= 0; text: root.hasValues ? root.emptyText : root.unknownText; font.pixelSize: Ink.caption; opacity: 0.65 }
     }
     Repeater {
         model: root.tickIndexes

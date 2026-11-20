@@ -10,6 +10,7 @@ FocusScope {
     id: root
     required property var dataSource
     property url brandIcon: ""
+    property real surfaceInset: 0
     property string languageOverride: ""
     property int tab: 2
     property bool moreOpen: false
@@ -121,6 +122,18 @@ FocusScope {
         }
     }
 
+    Rectangle {
+        z: -1
+        x: -root.surfaceInset
+        y: -root.surfaceInset
+        width: root.width + root.surfaceInset * 2
+        height: root.height + root.surfaceInset * 2
+        color: C.Ink.background
+        radius: Style.space(8)
+        border.color: C.Ink.border
+        border.width: root.surfaceInset > 0 ? 1 : 0
+    }
+
     ColumnLayout {
         objectName: "panel-layout"
         anchors.fill: parent
@@ -151,7 +164,7 @@ FocusScope {
                 C.PanelButton {
                     required property string modelData
                     label: root.t(modelData)
-                    fontSize: Style.font.caption
+                    fontSize: C.Ink.caption
                     onClicked: root.launchSection(modelData)
                 }
             }
@@ -176,14 +189,14 @@ FocusScope {
             }
         }
 
-        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.alpha(Commons.Color.popups.text, 0.12) }
+        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.alpha(C.Ink.text, 0.12) }
 
         C.Label {
             visible: root.dataSource.errorText !== "" || root.dataSource.noticeText !== ""
             Layout.fillWidth: true
             text: root.dataSource.errorText ? root.t("snapshot_failed") : root.notice(root.dataSource.noticeText)
-            color: root.dataSource.actionSucceeded && !root.dataSource.errorText ? Commons.Color.popups.text : Commons.Color.urgent
-            font.pixelSize: Style.font.caption
+            color: root.dataSource.actionSucceeded && !root.dataSource.errorText ? C.Ink.text : C.Ink.urgent
+            font.pixelSize: C.Ink.caption
             wrapMode: Text.WordWrap
             maximumLineCount: 3
         }
@@ -208,12 +221,12 @@ FocusScope {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 flickableDirection: Flickable.VerticalFlick
-                Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
+                Controls.ScrollBar.vertical: C.PanelScrollBar { policy: Controls.ScrollBar.AsNeeded }
                 Column {
                     id: agentColumn
                     width: parent.width - Style.space(8)
                     spacing: Style.space(8)
-                    C.Label { width: parent.width; text: root.t("agent_intro"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
+                    C.Label { width: parent.width; text: root.t("agent_intro"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
                     C.Label { visible: !agentRows.count; width: parent.width; text: root.t("agents_empty"); wrapMode: Text.WordWrap; opacity: 0.65 }
                     Repeater {
                         id: agentRows
@@ -223,10 +236,10 @@ FocusScope {
                             required property var modelData
                             width: agentColumn.width
                             implicitHeight: Style.space(73)
-                            radius: Style.space(10)
-                            color: root.agentId === modelData.id ? Qt.alpha(Commons.Color.accent, 0.1) : Qt.alpha(Commons.Color.popups.text, 0.025)
+                            radius: Style.space(6)
+                            color: root.agentId === modelData.id ? Qt.alpha(C.Ink.accent, 0.1) : Qt.alpha(C.Ink.text, 0.025)
                             border.width: root.agentId === modelData.id ? 1 : 0
-                            border.color: Qt.alpha(Commons.Color.accent, 0.5)
+                            border.color: Qt.alpha(C.Ink.accent, 0.5)
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.margins: Style.space(11)
@@ -235,7 +248,7 @@ FocusScope {
                                     Layout.fillWidth: true
                                     spacing: Style.space(5)
                                     C.Label { Layout.fillWidth: true; text: agentRow.modelData.name; font.weight: Font.DemiBold }
-                                    C.Label { Layout.fillWidth: true; text: agentRow.modelData.route || (agentRow.modelData.configured ? root.t("configured") : root.t("not_configured")); font.pixelSize: Style.font.caption; opacity: 0.6 }
+                                    C.Label { Layout.fillWidth: true; text: agentRow.modelData.route || (agentRow.modelData.configured ? root.t("configured") : root.t("not_configured")); font.pixelSize: C.Ink.caption; opacity: 0.6 }
                                 }
                                 C.PanelButton { objectName: "agent-choice-" + agentRow.modelData.id; visible: agentRow.modelData.editable; label: root.t("change"); enabled: !root.editing; onClicked: root.chooseAgent(agentRow.modelData) }
                                 C.Label { visible: !agentRow.modelData.editable; text: root.t("detect_only"); font.pixelSize: Style.space(10); opacity: 0.55 }
@@ -252,20 +265,20 @@ FocusScope {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 flickableDirection: Flickable.VerticalFlick
-                Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
+                Controls.ScrollBar.vertical: C.PanelScrollBar { policy: Controls.ScrollBar.AsNeeded }
                 Column {
                     id: quotaColumn
                     width: parent.width - Style.space(8)
                     spacing: Style.space(14)
-                    Ui.Dropdown { objectName: "quota-provider-select"; width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
-                    C.Label { width: parent.width; text: root.t("quota_local"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
+                    C.PanelDropdown { objectName: "quota-provider-select"; width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
+                    C.Label { width: parent.width; text: root.t("quota_local"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
                     Column {
                         visible: !(root.quota.rows || []).length
                         width: parent.width
                         topPadding: Style.space(28)
                         spacing: Style.space(10)
                         C.Label { width: parent.width; text: root.t("quota_empty"); font.pixelSize: Style.space(17); font.weight: Font.Medium }
-                        C.Label { width: parent.width; text: root.t("quota_empty_detail"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
+                        C.Label { width: parent.width; text: root.t("quota_empty_detail"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
                     }
                     Repeater {
                         model: root.quota.rows || []
@@ -278,17 +291,17 @@ FocusScope {
                             spacing: Style.space(7)
                             RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: quotaRow.modelData.label; font.weight: Font.Medium } C.Label { text: typeof quotaRow.modelData.remaining_percent === "number" ? root.number(quotaRow.modelData.remaining_percent, 0) + "%" : "—" } }
                             Rectangle {
-                                width: parent.width; height: Style.space(4); radius: 2; color: Qt.alpha(Commons.Color.popups.text, 0.08)
-                                Rectangle { height: parent.height; radius: parent.radius; width: typeof quotaRow.modelData.remaining_percent === "number" ? parent.width * Math.max(0, Math.min(100, quotaRow.modelData.remaining_percent)) / 100 : 0; color: Commons.Color.accent; opacity: 0.75 }
+                                width: parent.width; height: Style.space(4); radius: 2; color: Qt.alpha(C.Ink.text, 0.08)
+                                Rectangle { height: parent.height; radius: parent.radius; width: typeof quotaRow.modelData.remaining_percent === "number" ? parent.width * Math.max(0, Math.min(100, quotaRow.modelData.remaining_percent)) / 100 : 0; color: C.Ink.accent; opacity: 0.75 }
                             }
                             RowLayout {
                                 width: parent.width
-                                C.Label { Layout.fillWidth: true; Layout.minimumWidth: 0; text: quotaRow.modelData.reset_label || quotaRow.modelData.detail || root.t("unknown"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
+                                C.Label { Layout.fillWidth: true; Layout.minimumWidth: 0; text: quotaRow.modelData.reset_label || quotaRow.modelData.detail || root.t("unknown"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
                                 C.PanelButton {
                                     objectName: "quota-refresh-" + (quotaRow.account ? quotaRow.account.id : "")
                                     visible: !!quotaRow.account && quotaRow.account.can_refresh
                                     label: root.dataSource.actionBusy && root.dataSource.actionName === "quota.refresh" ? root.t("quota_updating") : root.t("quota_update")
-                                    fontSize: Style.font.caption
+                                    fontSize: C.Ink.caption
                                     enabled: !root.editing
                                     tooltipText: root.t("quota_update_hint")
                                     onClicked: root.dataSource.perform("quota.refresh", {account:quotaRow.account.id})
@@ -312,15 +325,15 @@ FocusScope {
                                     visible: quotaAccountRow.modelData.can_refresh
                                     label: root.dataSource.actionBusy && root.dataSource.actionName === "quota.refresh" ? root.t("quota_updating") : root.t("quota_update")
                                     enabled: !root.editing
-                                    fontSize: Style.font.caption
+                                    fontSize: C.Ink.caption
                                     tooltipText: root.t("quota_update_hint")
                                     onClicked: root.dataSource.perform("quota.refresh", {account:quotaAccountRow.modelData.id})
                                 }
                             }
-                            C.Label { width: parent.width; text: quotaAccountRow.modelData.can_refresh ? root.t("quota_not_cached") : root.quotaReason(quotaAccountRow.modelData.reason); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
+                            C.Label { width: parent.width; text: quotaAccountRow.modelData.can_refresh ? root.t("quota_not_cached") : root.quotaReason(quotaAccountRow.modelData.reason); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
                         }
                     }
-                    C.Label { width: parent.width; visible: root.quota.refresh_available === false; text: root.t("quota_helper_update"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
+                    C.Label { width: parent.width; visible: root.quota.refresh_available === false; text: root.t("quota_helper_update"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.6 }
                 }
             }
 
@@ -331,7 +344,7 @@ FocusScope {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 flickableDirection: Flickable.VerticalFlick
-                Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
+                Controls.ScrollBar.vertical: C.PanelScrollBar { policy: Controls.ScrollBar.AsNeeded }
                 Column {
                     id: usageColumn
                     width: parent.width - Style.space(8)
@@ -341,11 +354,11 @@ FocusScope {
                         spacing: Style.space(3)
                         Repeater {
                             model: ["today","7d","30d","all"]
-                            C.PanelButton { required property string modelData; Layout.fillWidth: true; label: root.t(modelData); selected: root.dataSource.period === modelData; fontSize: Style.font.caption; onClicked: root.dataSource.filter(modelData, root.dataSource.provider) }
+                            C.PanelButton { required property string modelData; Layout.fillWidth: true; label: root.t(modelData); selected: root.dataSource.period === modelData; fontSize: C.Ink.caption; onClicked: root.dataSource.filter(modelData, root.dataSource.provider) }
                         }
                     }
-                    Ui.Dropdown { objectName: "usage-provider-select"; width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
-                    C.Label { width: parent.width; visible: root.usage.state === "partial" || root.usage.state === "unavailable"; text: root.usage.state === "partial" ? root.t("usage_partial") : root.t("usage_unavailable"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
+                    C.PanelDropdown { objectName: "usage-provider-select"; width: parent.width; label: root.t("provider"); showLabel: false; value: root.dataSource.provider; options: root.providerOptions(); onChanged: function(value) { root.dataSource.filter(root.dataSource.period, value) } }
+                    C.Label { width: parent.width; visible: root.usage.state === "partial" || root.usage.state === "unavailable"; text: root.usage.state === "partial" ? root.t("usage_partial") : root.t("usage_unavailable"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
                     GridLayout {
                         width: parent.width
                         columns: width >= Style.space(440) ? 4 : 2
@@ -367,7 +380,7 @@ FocusScope {
                     }
                     C.UsageChart { width: parent.width; buckets: root.usage.buckets || []; metric: root.chartMetric; emptyText: root.chartMetric === "cost_usd" && root.costValue(root.totals) === null ? root.t("not_priced") : root.t("no_activity"); partialLabel: root.t("partial"); unknownText: root.chartMetric === "cost_usd" ? root.t("not_priced") : root.t("unknown") }
                     C.Label { width: parent.width; text: root.t("by_provider"); font.weight: Font.DemiBold }
-                    C.Label { width: parent.width; visible: !(root.usage.providers || []).length; text: root.t("no_usage"); opacity: 0.6; font.pixelSize: Style.font.caption }
+                    C.Label { width: parent.width; visible: !(root.usage.providers || []).length; text: root.t("no_usage"); opacity: 0.6; font.pixelSize: C.Ink.caption }
                     Repeater {
                         model: root.usage.providers || []
                         Column {
@@ -375,10 +388,10 @@ FocusScope {
                             required property var modelData
                             width: usageColumn.width
                             spacing: Style.space(6)
-                            RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: providerRow.modelData.label; font.weight: Font.Medium } C.Label { text: root.compact(providerRow.modelData.tokens) + "  ·  " + root.money(root.costValue(providerRow.modelData)); font.pixelSize: Style.font.caption } }
+                            RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: providerRow.modelData.label; font.weight: Font.Medium } C.Label { text: root.compact(providerRow.modelData.tokens) + "  ·  " + root.money(root.costValue(providerRow.modelData)); font.pixelSize: C.Ink.caption } }
                             Rectangle {
-                                width: parent.width; height: Style.space(3); radius: 1; color: Qt.alpha(Commons.Color.popups.text, 0.06)
-                                Rectangle { width: root.totals.tokens > 0 ? parent.width * Math.min(1, providerRow.modelData.tokens / root.totals.tokens) : 0; height: parent.height; radius: 1; color: Commons.Color.accent; opacity: 0.55 }
+                                width: parent.width; height: Style.space(3); radius: 1; color: Qt.alpha(C.Ink.text, 0.06)
+                                Rectangle { width: root.totals.tokens > 0 ? parent.width * Math.min(1, providerRow.modelData.tokens / root.totals.tokens) : 0; height: parent.height; radius: 1; color: C.Ink.accent; opacity: 0.55 }
                             }
                             C.Label { width: parent.width; text: root.t("provider_detail").arg(root.number(providerRow.modelData.requests)).arg(root.number(providerRow.modelData.failures)).arg(root.percent(providerRow.modelData.cache_hit_ratio)); font.pixelSize: Style.space(10); opacity: 0.55 }
                             C.Label { width: parent.width; text: root.costDetail(providerRow.modelData); font.pixelSize: Style.space(10); opacity: 0.55 }
@@ -394,13 +407,13 @@ FocusScope {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 flickableDirection: Flickable.VerticalFlick
-                Controls.ScrollBar.vertical: Controls.ScrollBar { policy: Controls.ScrollBar.AsNeeded }
+                Controls.ScrollBar.vertical: C.PanelScrollBar { policy: Controls.ScrollBar.AsNeeded }
                 Column {
                     id: routingColumn
                     width: parent.width - Style.space(8)
                     spacing: Style.space(12)
-                    C.Label { width: parent.width; text: root.t("routing_intro"); font.pixelSize: Style.font.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
-                    RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: root.t("routes_count").arg(root.routes.length); font.weight: Font.DemiBold } C.PanelButton { label: root.t("manage"); fontSize: Style.font.caption; onClicked: root.launchSection("models") } }
+                    C.Label { width: parent.width; text: root.t("routing_intro"); font.pixelSize: C.Ink.caption; wrapMode: Text.WordWrap; opacity: 0.65 }
+                    RowLayout { width: parent.width; C.Label { Layout.fillWidth: true; text: root.t("routes_count").arg(root.routes.length); font.weight: Font.DemiBold } C.PanelButton { label: root.t("manage"); fontSize: C.Ink.caption; onClicked: root.launchSection("models") } }
                     Repeater {
                         model: root.groups
                         Rectangle {
@@ -408,21 +421,21 @@ FocusScope {
                             required property var modelData
                             width: routingColumn.width
                             implicitHeight: Style.space(62)
-                            radius: Style.space(10)
-                            color: Qt.alpha(Commons.Color.popups.text, 0.025)
+                            radius: Style.space(6)
+                            color: Qt.alpha(C.Ink.text, 0.025)
                             RowLayout {
                                 anchors.fill: parent; anchors.margins: Style.space(10)
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: Style.space(4)
                                     C.Label { Layout.fillWidth: true; text: groupRow.modelData.label; font.weight: Font.Medium }
-                                    C.Label { Layout.fillWidth: true; text: root.t("group_detail").arg(groupRow.modelData.strategy).arg(groupRow.modelData.members_count); font.pixelSize: Style.font.caption; opacity: 0.6 }
+                                    C.Label { Layout.fillWidth: true; text: root.t("group_detail").arg(groupRow.modelData.strategy).arg(groupRow.modelData.members_count); font.pixelSize: C.Ink.caption; opacity: 0.6 }
                                 }
-                                C.PanelButton { label: root.t("select"); fontSize: Style.font.caption; onClicked: root.routeId = groupRow.modelData.id }
+                                C.PanelButton { label: root.t("select"); fontSize: C.Ink.caption; onClicked: root.routeId = groupRow.modelData.id }
                             }
                         }
                     }
-                    C.Label { width: parent.width; visible: !root.groups.length; text: root.t("groups_empty"); font.pixelSize: Style.font.caption; opacity: 0.6 }
+                    C.Label { width: parent.width; visible: !root.groups.length; text: root.t("groups_empty"); font.pixelSize: C.Ink.caption; opacity: 0.6 }
                 }
             }
         }
@@ -432,16 +445,16 @@ FocusScope {
             Layout.fillWidth: true
             Layout.minimumWidth: 0
             spacing: Style.space(8)
-            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.alpha(Commons.Color.popups.text, 0.12) }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.alpha(C.Ink.text, 0.12) }
             C.Label {
                 visible: root.tab === 0
                 Layout.fillWidth: true
                 text: root.selectedAgent ? root.t("configure_agent").arg(root.selectedAgent.name) : root.t("choose_agent_above")
                 font.weight: root.selectedAgent ? Font.DemiBold : Font.Normal
-                font.pixelSize: Style.font.caption
+                font.pixelSize: C.Ink.caption
                 opacity: root.selectedAgent ? 0.9 : 0.6
             }
-            Ui.Dropdown {
+            C.PanelDropdown {
                 visible: root.tab === 3
                 Layout.fillWidth: true
                 label: root.t("agent")
@@ -449,7 +462,7 @@ FocusScope {
                 options: root.agentOptions()
                     onChanged: function(value) { var selected = root.agents.find(function(row) { return row.id === value }); if (selected) root.chooseAgent(selected) }
             }
-            Ui.SearchableDropdown {
+            C.RouteDropdown {
                 objectName: "agent-route-select"
                 Layout.minimumWidth: 0
                 visible: root.tab === 3 || !!root.selectedAgent
@@ -474,7 +487,7 @@ FocusScope {
         RowLayout {
             Layout.fillWidth: true
             C.Label { Layout.fillWidth: true; text: root.snapshot ? root.t("local_snapshot") + (root.gatewayState.version ? " · " + root.gatewayState.version : "") : root.t("local_snapshot"); font.pixelSize: Style.space(10); opacity: 0.5 }
-            C.PanelButton { label: root.t("close"); fontSize: Style.font.caption; verticalPadding: Style.space(4); onClicked: root.closeRequested() }
+            C.PanelButton { label: root.t("close"); fontSize: C.Ink.caption; verticalPadding: Style.space(4); onClicked: root.closeRequested() }
         }
     }
 }

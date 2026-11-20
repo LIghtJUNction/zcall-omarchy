@@ -1,0 +1,8 @@
+singleton Ink 1.0 Ink.qml
+Label 1.0 Label.qml
+MetricCard 1.0 MetricCard.qml
+PanelButton 1.0 PanelButton.qml
+PanelDropdown 1.0 PanelDropdown.qml
+RouteDropdown 1.0 RouteDropdown.qml
+PanelScrollBar 1.0 PanelScrollBar.qml
+UsageChart 1.0 UsageChart.qml

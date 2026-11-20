@@ -2,7 +2,7 @@
 
 A native bar panel for the [zcalld](https://github.com/LIghtJUNction/zcalld) local AI gateway. Click the bar icon to see agents, saved account limits, usage and routes. Select an agent and a model or group, then apply the change directly in the panel.
 
-The panel uses Omarchy's theme, keyboard focus and popup positioning. It reads local data when opened or refreshed; it has no polling loop or separate background service. Closing it leaves the gateway running. The independent desktop GUI is optional.
+The panel uses the warm graphite, linen and copper Ink palette from [oh-my-ztty](https://github.com/LIghtJUNction/oh-my-ztty/tree/6d95c7eaa1a4ef27df2ae246edd7bddde5f3b31b), with Omarchy's native keyboard focus and popup positioning. It reads local data when opened or refreshed; it has no polling loop or separate background service. Closing it leaves the gateway running. The independent desktop GUI is optional.
 
 ## Four views
 
@@ -28,7 +28,7 @@ omarchy plugin add https://github.com/LIghtJUNction/zcall-omarchy --yes
 omarchy plugin enable lightjunction.zcall --section right
 ```
 
-Enabling the plugin adds a widget through Omarchy's own bar configuration. It retains other widget entries and keybindings. The panel follows the current theme and display language, with English, Simplified Chinese and Traditional Chinese strings. Its optional `language` setting overrides only this plugin (`en`, `zh-CN` or `zh-TW`). The native popup handles outside-click dismissal, other open panels and the available screen edges.
+Enabling the plugin adds a widget through Omarchy's own bar configuration. It retains other widget entries and keybindings. The Ink palette follows the shell's light or dark preference; light mode uses darker copper for readable text. Labels use a preferred monospace family with native font fallback. These choices apply only to this panel and do not change the desktop theme or font configuration. The panel follows the display language, with English, Simplified Chinese and Traditional Chinese strings. Its optional `language` setting overrides only this plugin (`en`, `zh-CN` or `zh-TW`). The native popup handles outside-click dismissal, other open panels and the available screen edges.
 
 ### Arch package and terminal menu
 

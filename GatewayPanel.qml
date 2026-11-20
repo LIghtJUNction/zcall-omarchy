@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Ui as Ui
 import qs.Commons
+import "components" as C
 
 Ui.Panel {
     id: root
@@ -28,11 +29,14 @@ Ui.Panel {
         bar: root.bar
         open: root.opened
         focusTarget: popup.loadedContent
+        padding: Style.space(20)
+        borderSpec: Border.flat(C.Ink.border, 1)
         contentWidth: popup.fittedContentWidth(Style.space(560))
         contentHeight: popup.cappedContentHeight(Style.space(680))
         content: PanelContent {
             anchors.fill: parent
             dataSource: backendSource
+            surfaceInset: popup.padding + 1
             brandIcon: root.brandIcon
             languageOverride: root.setting("language", "")
             onCloseRequested: root.close()
