@@ -1,9 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=Zcall
-Comment=Manage the local AI gateway from Omarchy
-Exec=zcall-omarchy show menu
-Icon=utilities-terminal
+Name=Zcall for Omarchy
+Name[zh_CN]=Zcall 面板
+Name[zh_TW]=Zcall 面板
+Comment=Open the local AI gateway panel for Omarchy
+Exec=zcall-omarchy show
+Icon=zcall-omarchy
 Terminal=false
 Categories=Development;
 Keywords=AI;gateway;zcalld;Omarchy;

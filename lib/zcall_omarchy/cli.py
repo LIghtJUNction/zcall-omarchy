@@ -42,9 +42,9 @@ def show_panel(root, config=None):
     command = shutil.which("omarchy-shell")
     if command and not config:
         try:
-            result = subprocess.run([command, "shell", "toggle", "lightjunction.zcall", "{}"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4, check=False)
-            if result.returncode == 0:
+            result = subprocess.run([command, "shell", "summon", "lightjunction.zcall", "{}"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=4, check=False, text=True)
+            if result.returncode == 0 and result.stdout.strip() == "ok":
                 return
         except (OSError, subprocess.TimeoutExpired):
             pass
@@ -82,7 +82,7 @@ def main(root):
     for name in ("open", "menu"):
         p = sub.add_parser(name, help="Open the desktop menu" if name == "open" else "Run terminal forms")
         p.add_argument("section", nargs="?", default="menu", choices=sorted(SECTIONS))
-    sub.add_parser("show", help="Toggle the native bar panel, with terminal fallback")
+    sub.add_parser("show", help="Open the native bar panel, with terminal fallback")
     panel = sub.add_parser("panel", help="Bounded local JSON interface for the native panel")
     panels = panel.add_subparsers(dest="panel_command", required=True)
     p = panels.add_parser("snapshot")

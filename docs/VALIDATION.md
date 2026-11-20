@@ -2,13 +2,15 @@
 
 ## Native panel (0.2)
 
-The final local controller gate passed **73 tests with no skips**, including installed zcalld operations inside disposable homes.
+The final local controller gate passed **75 tests with no skips**, including installed zcalld operations inside disposable homes.
 
 The panel uses the installed Omarchy 4.5 `Ui.Panel`, `Ui.KeyboardPanel`, dropdowns and theme modules. The isolated native check opens the actual widget on each of the four bar edges and verifies that the card stays within its anchor screen. It checks the top-level host owner, lazy loading, Ctrl+Tab, Ctrl+R, Escape and focus after closing and reopening. The keyboard path opens a provider selector, searches and applies an Agent route, confirms Revert, updates one synthetic quota, and handles a second synthetic quota timeout. Four opens, manual refresh and successful writes execute exactly eight snapshots and four explicit fake actions, without retries. This checks the native host contract; it is not a claim of a manual multi-monitor desktop trial.
 
 A separate process-lifecycle fixture verifies that a closed panel does not read data, rapid filter changes keep the latest result, an explicit action is submitted once, closing does not repeat or cancel an already submitted quota update, and a missing executable produces an error. No timer polls the gateway.
 
 The actual QML content has been rendered with synthetic data at 560×680 and 360×580 logical pixels, in dark and light themes, with Simplified and Traditional Chinese overrides. The narrow preview asserts that all four tabs remain inside the panel. Names and messages use plain text. Agent selection has one route picker and explicit Apply/Revert controls; the backend tests run those operations against an installed zcalld binary in disposable homes, including refusal to overwrite user edits.
+
+The desktop-entry test parses the installed launcher argv through the public CLI and checks its independent hicolor icon. A successful IPC process without the shell’s explicit open acknowledgement falls back to full controls.
 
 GUI activation tests cover focusing an existing window, the private bounded startup lock, safe argv, missing-GUI terminal fallback and rejection of an unsafe lock directory. These tests do not open or change a user's running GUI.
 

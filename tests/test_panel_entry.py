@@ -1,4 +1,6 @@
 """Exercise the public entry boundary without changing a desktop or agent."""
+import configparser
+import shlex
 import contextlib
 import io
 import json
@@ -19,6 +21,20 @@ class PanelEntry(unittest.TestCase):
         with patch.object(sys, 'argv', ['zcall-omarchy', *args]), contextlib.redirect_stdout(output):
             code = cli.main(ROOT)
         return code, json.loads(output.getvalue()) if output.getvalue() else None
+
+    def test_desktop_launcher_uses_the_public_cli_and_its_own_icon(self):
+        entry = configparser.ConfigParser(interpolation=None)
+        entry.read(ROOT / 'share/zcall-omarchy.desktop')
+        arguments = shlex.split(entry['Desktop Entry']['Exec'])
+        self.assertEqual(arguments[0], 'zcall-omarchy')
+        with patch.object(cli, 'show_panel') as show, patch.object(cli, 'Client') as client:
+            code, value = self.invoke(arguments[1:])
+            self.assertEqual((code, value), (0, None))
+            show.assert_called_once_with(ROOT, None)
+            client.assert_not_called()
+        icon = entry['Desktop Entry']['Icon']
+        self.assertEqual(icon, 'zcall-omarchy')
+        self.assertTrue((ROOT / 'share/icons/hicolor/scalable/apps' / (icon + '.svg')).is_file())
 
     def test_snapshot_is_only_the_local_backend_contract(self):
         client = Mock()
@@ -54,11 +70,17 @@ class PanelEntry(unittest.TestCase):
                 action.assert_not_called()
 
     def test_native_show_uses_one_existing_ipc_target(self):
-        with patch.object(cli.shutil, 'which', return_value='/usr/bin/omarchy-shell'), patch.object(cli.subprocess, 'run', return_value=Mock(returncode=0)) as run, patch.object(cli, 'launch') as launch:
+        with patch.object(cli.shutil, 'which', return_value='/usr/bin/omarchy-shell'), patch.object(cli.subprocess, 'run', return_value=Mock(returncode=0, stdout='ok\n')) as run, patch.object(cli, 'launch') as launch:
             cli.show_panel(ROOT)
-            self.assertEqual(run.call_args.args[0], ['/usr/bin/omarchy-shell', 'shell', 'toggle', 'lightjunction.zcall', '{}'])
+            self.assertEqual(run.call_args.args[0], ['/usr/bin/omarchy-shell', 'shell', 'summon', 'lightjunction.zcall', '{}'])
             self.assertNotIn('shell', run.call_args.kwargs)
             launch.assert_not_called()
+
+    def test_unregistered_bar_widget_acknowledgement_uses_terminal_fallback(self):
+        for reply in ('unknown\n', '', 'unexpected'):
+            with self.subTest(reply=reply), patch.object(cli.shutil, 'which', return_value='/usr/bin/omarchy-shell'), patch.object(cli.subprocess, 'run', return_value=Mock(returncode=0, stdout=reply)), patch.object(cli, 'launch') as launch:
+                cli.show_panel(ROOT)
+                launch.assert_called_once_with(ROOT, 'menu', None)
 
     def test_missing_shell_or_custom_configuration_uses_terminal_fallback(self):
         for config, found, failure in [(None, None, False), (None, '/bin/shell', True), ('/tmp/other.conf', '/bin/shell', False)]:

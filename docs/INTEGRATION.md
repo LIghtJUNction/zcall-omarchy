@@ -14,6 +14,7 @@ The inspected official interfaces are:
 | `qs.Ui.BarWidget` and `BarIconButton` | Reuse the desktop's widget layout, theme and interaction |
 | `qs.Ui.Panel` and `KeyboardPanel` | Native popup ownership, keyboard focus, dismissal and screen bounds |
 | `qs.Commons.Translations`, `Color` and `Style` | Theme and translated labels, with a plugin-only language override |
+| `omarchy-shell shell summon ID {}` | Open on the focused screen and require its `ok` acknowledgement; otherwise use terminal controls |
 | `omarchy-hyprland-focus-app` | Focus an existing optional GUI before starting one |
 | `omarchy plugin add/enable/disable/remove` | Let Omarchy manage the optional bar entry |
 | `omarchy-menu summon ROUTE` | Open the built-in menu at the Zcall route |
