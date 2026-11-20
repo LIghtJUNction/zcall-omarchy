@@ -42,6 +42,7 @@ aur.mkdir(exist_ok=True)
 for template, target in (("PKGBUILD.in", "PKGBUILD"), ("SRCINFO.in", ".SRCINFO")):
     source = git("show", commit + ":packaging/" + template).decode()
     (aur / target).write_text(source.replace("@VERSION@", version).replace("@SHA256@", sha))
+(args.output / "zcall-omarchy.SRCINFO").write_bytes((aur / ".SRCINFO").read_bytes())
 record = {"project": "zcall-omarchy", "version": version, "commit": commit,
           "archive": name + ".tar.gz", "sha256": sha}
 (args.output / "release.json").write_text(json.dumps(record, indent=2) + "\n")

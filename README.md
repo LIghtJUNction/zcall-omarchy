@@ -76,6 +76,8 @@ cd zcall-omarchy
 
 Keep this checkout at its installed path, or uninstall its menu entries before moving it. The package installation uses a stable path and avoids this requirement.
 
+For the separate menu and official bar registration steps, see [installation and removal](docs/INSTALLATION.md).
+
 ## Daily use
 
 Forms open in Omarchy's configured terminal. Cancel before the final apply step to leave configuration unchanged. Destructive service actions ask for confirmation. A saved configuration that needs a restart offers that action separately.

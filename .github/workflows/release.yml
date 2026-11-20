@@ -39,15 +39,15 @@ jobs:
             previous=$(mktemp -d)
             trap 'rm -rf "$previous"' EXIT
             gh release download "$RELEASE_TAG" --dir "$previous" \
-              --pattern "$archive" --pattern SHA256SUMS --pattern PKGBUILD --pattern .SRCINFO
+              --pattern "$archive" --pattern SHA256SUMS --pattern PKGBUILD --pattern zcall-omarchy.SRCINFO
             cmp "dist/$archive" "$previous/$archive"
             cmp dist/SHA256SUMS "$previous/SHA256SUMS"
             cmp dist/aur/PKGBUILD "$previous/PKGBUILD"
-            cmp dist/aur/.SRCINFO "$previous/.SRCINFO"
+            cmp dist/zcall-omarchy.SRCINFO "$previous/zcall-omarchy.SRCINFO"
           else
             gh release create "$RELEASE_TAG" --verify-tag --generate-notes \
               --title "Zcall for Omarchy ${RELEASE_TAG#v}" \
-              "dist/$archive" dist/SHA256SUMS dist/aur/PKGBUILD dist/aur/.SRCINFO
+              "dist/$archive" dist/SHA256SUMS dist/aur/PKGBUILD dist/zcall-omarchy.SRCINFO
           fi
       - name: Publish AUR recipe
         if: vars.AUR_PUBLISH == 'true'

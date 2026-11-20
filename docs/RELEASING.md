@@ -30,7 +30,7 @@ python3 scripts/bump.py patch --release
 
 The command updates both version files, runs checks, commits them, creates an annotated tag and pushes the branch and tag atomically. `minor`, `major` and an exact version are supported. The first release can tag the current version with `python3 scripts/bump.py 0.1.0 --release`.
 
-The tag workflow checks the source, creates a reproducible tar.gz archive and SHA256SUMS, publishes a GitHub release and optionally publishes the AUR recipe. Version tags and existing assets are immutable. A retry compares existing assets byte for byte before continuing; it never uses an overwrite flag.
+The tag workflow checks the source, creates a reproducible tar.gz archive and SHA256SUMS, publishes a GitHub release and optionally publishes the AUR recipe. The source-info release asset is explicitly named zcall-omarchy.SRCINFO because GitHub renames leading-dot asset names; the AUR checkout still uses the required .SRCINFO filename. Version tags and existing assets are immutable. A retry compares existing assets byte for byte before continuing; it never uses an overwrite flag.
 
 If a push fails after the local tag is created, inspect the remote branch and tag before retrying. Do not move an already published tag. Fix a published issue in the next version.
 
