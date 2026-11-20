@@ -74,6 +74,16 @@ class MenuTransaction(Home):
         self.assertTrue(menu.read_text().startswith("// later user note"))
         self.assertEqual(set(install.parse_jsonc(menu.read_text())), {"personal", "new"})
 
+    def test_uninstall_empty_original_preserves_a_later_entry(self):
+        install.install(ROOT / "bin/zcall-omarchy", True)
+        menu = install.paths()[0]
+        source = menu.read_text()
+        closing = source.rfind("}")
+        menu.write_text(source[:closing] + ',\n"later":{"label":"User entry"}\n' + source[closing:])
+        install.uninstall(True)
+        self.assertEqual(install.parse_jsonc(menu.read_text()),
+                         {"later": {"label": "User entry"}})
+
     def test_conflicting_namespace_and_duplicate_keys_are_rejected_without_writes(self):
         for original in ['{"zcall":{"label":"Mine"}}\n', '{"x":1,"x":2}\n']:
             menu = self.menu(original)

@@ -141,7 +141,30 @@ def remove_owned(source, record):
         if source.encode() == (old if old is not None else b"{}\n"):
             return source
         raise Error("The Zcall block was edited or moved unexpectedly; no user edits were removed.")
-    return source.replace(block, "", 1)
+    parse_jsonc(source)
+    result = source.replace(block, "", 1)
+    # An originally empty menu can gain a new entry after our block. Its
+    # separating comma would become a leading comma when we remove the block.
+    # Remove only that now-unused structural byte; retain every new entry.
+    if not parse_jsonc(decoded(prior_bytes(record) or b"{}\n")):
+        first = False
+        offset = 0
+        for line in result.splitlines(keepends=True):
+            if line.lstrip().startswith("//"):
+                offset += len(line)
+                continue
+            for index, char in enumerate(line):
+                if char.isspace():
+                    continue
+                if not first and char == "{":
+                    first = True
+                    continue
+                if first and char == ",":
+                    position = offset + index
+                    return result[:position] + result[position + 1:]
+                return result
+            offset += len(line)
+    return result
 
 
 def entries(entry):

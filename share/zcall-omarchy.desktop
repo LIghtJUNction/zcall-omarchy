@@ -5,5 +5,5 @@ Comment=Manage the local AI gateway from Omarchy
 Exec=zcall-omarchy open menu
 Icon=utilities-terminal
 Terminal=false
-Categories=Development;Utility;
+Categories=Development;
 Keywords=AI;gateway;zcalld;Omarchy;
