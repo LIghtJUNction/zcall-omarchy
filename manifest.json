@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "lightjunction.zcall",
   "name": "Zcall",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "LIghtJUNction",
   "description": "Manage the zcalld local AI gateway from Omarchy",
   "kinds": [
